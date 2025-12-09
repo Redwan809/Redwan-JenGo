@@ -7,23 +7,37 @@
  * @returns The result of the calculation or null.
  */
 export function calculateExpression(expression: string): number | null {
+    // Create a mutable copy of the expression
+    let sanitizedExpression = expression;
+
+    // Replace special division and multiplication symbols
+    sanitizedExpression = sanitizedExpression.replace(/÷/g, '/').replace(/×/g, '*');
+
+    // Replace other bracket types with parentheses
+    sanitizedExpression = sanitizedExpression.replace(/[{[<]/g, '(').replace(/[}\]>]/g, ')');
+    
+    // Add multiplication operator before an opening parenthesis if it's missing
+    // e.g., "5(2)" becomes "5*(2)"
+    sanitizedExpression = sanitizedExpression.replace(/(\d)\(/g, '$1*(');
+
+
   // Regular expression to check for valid characters in a math expression.
   // Allows numbers, +, -, *, /, (, ), and spaces.
   const mathRegex = /^[0-9\s\+\-\*\/\(\)\.]+$/;
-  if (!mathRegex.test(expression)) {
+  if (!mathRegex.test(sanitizedExpression)) {
     return null;
   }
 
   // Another check to see if there is at least one operator
   const operatorRegex = /[\+\-\*\/]/;
-  if (!operatorRegex.test(expression)) {
+  if (!operatorRegex.test(sanitizedExpression)) {
     return null;
   }
 
   try {
     // Using the Function constructor is safer than eval() because it doesn't
     // have access to the surrounding scope.
-    const result = new Function(`return ${expression}`)();
+    const result = new Function(`return ${sanitizedExpression}`)();
 
     // Check if the result is a valid number
     if (typeof result === 'number' && isFinite(result)) {
