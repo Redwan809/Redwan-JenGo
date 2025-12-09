@@ -42,23 +42,33 @@ function searchDictionary(input: string): string | null {
   const lowerInput = input.toLowerCase();
 
   // Regex to find the word, trying different patterns.
-  const matchPattern1 = lowerInput.match(/^([a-zA-Z]+)\s+(?:mane|ortho|bhab|means|meaning|er bangla|bangla)/i);
-  const matchPattern2 = lowerInput.match(/(?:mane ki|ortho ki|meaning of|what is|bangla ki)\s+([a-zA-Z]+)/i);
+  // "love mane ki", "what is love", "love bangla ki"
+  const matchPattern1 = lowerInput.match(/^(.*?)\s+(?:mane|ortho|meaning|bangla)\s+ki/i);
+  const matchPattern2 = lowerInput.match(/(?:what is|meaning of)\s+(.*)/i);
+  const matchPattern3 = lowerInput.match(/^(.*)/i); // Fallback for single word.
 
   let wordToFind = "";
 
   if (matchPattern1 && matchPattern1[1]) {
-    wordToFind = matchPattern1[1];
+    wordToFind = matchPattern1[1].trim();
   } else if (matchPattern2 && matchPattern2[1]) {
-    wordToFind = matchPattern2[1];
-  } else if (lowerInput.trim().split(/\s+/).length === 1 && /^[a-zA-Z]+$/.test(lowerInput.trim())) {
-    // If the input is just a single English word.
-    wordToFind = lowerInput.trim();
+    wordToFind = matchPattern2[1].trim();
+  } else if (matchPattern3 && matchPattern3[1] && input.trim().split(/\s+/).length <= 2) {
+    // Single word or "love bangla"
+    const parts = input.trim().split(/\s+/);
+    if(parts[parts.length-1].toLowerCase() === 'ki' || parts[parts.length-1].toLowerCase() === 'mane'){
+       wordToFind = parts[0];
+    } else {
+       wordToFind = input.trim();
+    }
   }
-
+  
   if (!wordToFind) return null;
 
-  const entry = dictionary.find(d => d.en.toLowerCase() === wordToFind.toLowerCase());
+  // Handles cases like "love bangla"
+  const singleWord = wordToFind.split(" ")[0];
+
+  const entry = dictionary.find(d => d.en.toLowerCase() === singleWord.toLowerCase());
 
   if (entry) {
     return `"${entry.en}" এর বাংলা অর্থ হলো "${entry.bn}"।`;
@@ -89,7 +99,8 @@ function findIntent(cleanedInput: string): Intent | null {
  * Fetches an AI response with a simplified and more direct logic.
  */
 export async function getAiResponse(userInput: string, history: Message[]): Promise<string> {
-  const cleanedInput = userInput.trim().toLowerCase().replace(/[?.,!]/g, '');
+  const normalizedInput = userInput.trim().toLowerCase().replace(/ø/g, 'o');
+  const cleanedInput = normalizedInput.replace(/[?.,!]/g, '');
 
   // Priority 1: Math Check
   try {
