@@ -88,9 +88,8 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   // 4. If not a math problem or situational, check for general intents
   for (const intent of allIntents) {
     for (const pattern of intent.patterns) {
-      // Use a regex for whole word matching to avoid partial matches (e.g., 'love' in 'glove')
-      const patternRegex = new RegExp(`\\b${pattern.toLowerCase()}\\b`);
-      if (patternRegex.test(cleanedInput)) {
+      // Use a simple includes check, as word boundary regex can be tricky with mixed languages.
+      if (cleanedInput.includes(pattern.toLowerCase())) {
         const responses = intent.responses;
         return responses[Math.floor(Math.random() * responses.length)];
       }
@@ -100,3 +99,4 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   // 5. If no intent is matched, return a default message
   return "দুঃখিত, আমি আপনার কথা বুঝতে পারিনি। 😕 আমাকে অন্যভাবে জিজ্ঞেস করতে পারেন?";
 }
+
