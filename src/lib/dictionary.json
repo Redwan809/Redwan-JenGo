@@ -1,7 +1,9 @@
+
 {
   "dictionary": [
     { "en": "done", "bn": "সম্পন্ন" },
     { "en": "hello", "bn": "ওহে" },
+    { "en": "hi", "bn": "ওহে" },
     { "en": "world", "bn": "বিশ্ব" },
     { "en": "love", "bn": "ভালোবাসা" },
     { "en": "friend", "bn": "বন্ধু" },
