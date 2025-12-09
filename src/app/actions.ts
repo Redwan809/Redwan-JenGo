@@ -68,15 +68,13 @@ function searchDictionary(input: string): string | null {
 }
 
 /**
- * Finds a matching intent from the provided list.
+ * Finds a matching intent from the provided list by checking if the input includes the pattern.
  */
 function findIntent(cleanedInput: string): Intent | null {
     for (const intent of allIntents) {
         for (const pattern of intent.patterns) {
-            // Use a regex with word boundaries to ensure whole word matching.
-            // This prevents "love" from matching "valo".
-            const patternRegex = new RegExp(`\\b${pattern.toLowerCase()}\\b`);
-            if (patternRegex.test(cleanedInput)) {
+            // Use a simple `includes` check for broader matching.
+            if (cleanedInput.includes(pattern.toLowerCase())) {
                 return intent;
             }
         }
