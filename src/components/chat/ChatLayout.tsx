@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import ChatSidebar from './ChatSidebar';
 import ChatHeader from './ChatHeader';
@@ -15,19 +15,14 @@ export type Message = {
 };
 
 export default function ChatLayout() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    { 
+      id: 'initial-welcome', 
+      text: 'Hello! I am Redwan-Intel. How can I help you today?', 
+      sender: 'ai' 
+    }
+  ]);
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    // Moved initial message to useEffect to avoid hydration errors.
-    setMessages([
-      { 
-        id: 'initial-welcome', 
-        text: 'Hello! I am Redwan-Intel. How can I help you today?', 
-        sender: 'ai' 
-      }
-    ]);
-  }, []);
 
   const handleSendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
