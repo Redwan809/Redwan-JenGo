@@ -69,15 +69,16 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   // 2. Check for dictionary queries (Optimized with Map)
   // Pattern 1: "what is the meaning of [word]", "[word] er mane ki" etc.
   const matchPattern1 = cleanedInput.match(/(?:what is the meaning of|meaning of|ortho ki|অর্থ কী|meaning ki|er bangla meaning ki|এর বাংলা কি)\s+([\w\s]+)/);
-  // Pattern 2: "[word] mane ki", "[word]'s meaning" etc.
-  const matchPattern2 = cleanedInput.match(/([\w\s]+?)\s+(?:er ortho ki|'s meaning|ortho ki|এর অর্থ কী|অর্থ কী|meaning ki|mane ki|মানে কি|বাংলা কি)/);
+  // Pattern 2: "[word] mane ki", "[word]'s meaning", "[word] bangla ki" etc.
+  const matchPattern2 = cleanedInput.match(/([\w\s]+?)\s+(?:er\s+)?(?:ortho ki|'s meaning|ortho ki|এর অর্থ কী|অর্থ কী|meaning ki|mane ki|মানে কি|bangla ki|বাংলা কি)/);
+
 
   const dictionaryMatch = matchPattern1 || matchPattern2;
 
   if (dictionaryMatch) {
     // Determine the word from the matched pattern.
     // For pattern 1, it's the second capturing group. For pattern 2, it's the first.
-    const wordToFind = (matchPattern1 ? matchPattern1[1] : matchPattern2[1]).trim().toLowerCase();
+    const wordToFind = (matchPattern1 ? matchPattern1[1] : dictionaryMatch[1]).trim().toLowerCase();
     
     if (wordToFind) {
         const meaning = dictionaryMap.get(wordToFind);
