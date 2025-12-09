@@ -5,6 +5,9 @@ import socialIntents from "@/lib/intents/social.json";
 import identityIntents from "@/lib/intents/identity.json";
 import emojiIntents from "@/lib/intents/emoji.json";
 import knowledgeIntents from "@/lib/intents/knowledge.json";
+import historyIntents from "@/lib/intents/history.json";
+import scienceIntents from "@/lib/intents/science.json";
+import creativeIntents from "@/lib/intents/creative.json";
 import dictionaryData from "@/lib/dictionary.json";
 import { calculateExpression } from "@/lib/math-parser";
 import { getSituationalResponse } from "@/lib/situational-logic";
@@ -33,6 +36,9 @@ const allIntents: Intent[] = [
   ...(identityIntents as IntentData).intents,
   ...(emojiIntents as IntentData).intents,
   ...(knowledgeIntents as IntentData).intents,
+  ...(historyIntents as IntentData).intents,
+  ...(scienceIntents as IntentData).intents,
+  ...(creativeIntents as IntentData).intents,
 ];
 
 /**
@@ -44,32 +50,22 @@ function searchDictionary(input: string): string | null {
   const lowerInput = input.toLowerCase();
 
   // Regex to find the word, trying different patterns.
-  const matchPattern1 = lowerInput.match(/^(.*?)\s+(?:mane|ortho|meaning|bangla)\s+ki/i);
-  const matchPattern2 = lowerInput.match(/(?:what is the meaning of|what is|meaning of)\s+(.*)/i);
-  const matchPattern3 = lowerInput.match(/^(.*)/i); // Fallback for single word.
-
+  const matchPattern1 = lowerInput.match(/(?:what is the meaning of|meaning of|what is)\s*([a-zA-Z]+)/i);
+  const matchPattern2 = lowerInput.match(/^(.*?)\s*(?:mane ki|er ortho ki|ortho ki|er bangla ki|bangla ki|মানে কি|এর অর্থ কি|এর বাংলা কি)/i);
+  
   let wordToFind = "";
 
   if (matchPattern1 && matchPattern1[1]) {
     wordToFind = matchPattern1[1].trim();
   } else if (matchPattern2 && matchPattern2[1]) {
     wordToFind = matchPattern2[1].trim();
-  } else if (matchPattern3 && matchPattern3[1] && input.trim().split(/\s+/).length <= 2) {
-    const parts = input.trim().split(/\s+/);
-    if(parts[parts.length-1].toLowerCase() === 'ki' || parts[parts.length-1].toLowerCase() === 'mane'){
-       wordToFind = parts[0];
-    } else if (parts[parts.length-1].toLowerCase() === 'bangla'){
-       wordToFind = parts[0];
-    } else {
-       wordToFind = input.trim();
-    }
+  } else if (input.trim().split(/\s+/).length === 1) { // Fallback for a single word
+    wordToFind = input.trim();
   }
   
   if (!wordToFind) return null;
 
-  const singleWord = wordToFind.split(" ")[0];
-
-  const entry = dictionary.find(d => d.en.toLowerCase() === singleWord.toLowerCase());
+  const entry = dictionary.find(d => d.en.toLowerCase() === wordToFind.toLowerCase());
 
   if (entry) {
     return `"${entry.en}" এর বাংলা অর্থ হলো "${entry.bn}"।`;
