@@ -78,10 +78,7 @@ export default function ChatLayout() {
         sender: 'ai',
       };
       
-      setTimeout(() => {
-        setMessages(prev => [...prev, aiMessage]);
-        setIsLoading(false);
-      }, 2000);
+      setMessages(prev => [...prev, aiMessage]);
 
     } catch (error) {
       console.error("Error getting AI response:", error);
@@ -91,9 +88,16 @@ export default function ChatLayout() {
         sender: 'ai',
       };
       setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
     }
   };
+
+  const handleClearChat = () => {
+    localStorage.removeItem('chat-messages');
+    setMessages(initialMessages);
+  };
+
 
   if (isStorageLoading) {
     return <div className="flex h-svh w-full items-center justify-center bg-background"></div>;
@@ -103,10 +107,10 @@ export default function ChatLayout() {
     <SidebarProvider>
       <div className="flex h-svh w-full bg-background text-foreground">
         <Sidebar className="w-[260px]">
-          <ChatSidebar />
+          <ChatSidebar onClearChat={handleClearChat} />
         </Sidebar>
         <SidebarInset className="flex flex-col">
-          <ChatHeader />
+          <ChatHeader onClearChat={handleClearChat} />
           <ChatDisplay messages={messages} isLoading={isLoading} />
           <QuickReplies onSendMessage={handleSendMessage} isLoading={isLoading} />
           <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />

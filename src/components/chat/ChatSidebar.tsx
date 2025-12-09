@@ -4,21 +4,20 @@ import { SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem } from '@/c
 import { Plus } from 'lucide-react';
 import { Button } from '../ui/button';
 
-export default function ChatSidebar() {
-  
-  const handleNewChat = () => {
-    // Clear localStorage to start a new chat
-    localStorage.removeItem('chat-messages');
-    window.location.reload();
-  };
+type ChatSidebarProps = {
+  onClearChat: () => void;
+};
 
+
+export default function ChatSidebar({ onClearChat }: ChatSidebarProps) {
+  
   return (
     <div className="flex h-full flex-col">
       <SidebarHeader>
         <Button 
           variant="outline" 
           className="h-10 w-full justify-start rounded-full border-accent bg-transparent px-4 text-sm font-normal text-foreground/90 hover:bg-accent"
-          onClick={handleNewChat}
+          onClick={onClearChat}
         >
           <Plus className="mr-2 size-4" />
           New chat
