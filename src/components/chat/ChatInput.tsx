@@ -34,6 +34,7 @@ const ChatInput = ({ onSendMessage, isLoading }: ChatInputProps) => {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           disabled={isLoading}
+          maxLength={500}
           className="flex-1 border-none bg-transparent text-base focus-visible:ring-0 focus-visible:ring-offset-0"
         />
         <Button

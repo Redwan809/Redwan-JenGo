@@ -24,15 +24,11 @@ export function calculateExpression(expression: string): number | null {
     }
 
     // 3. Prevent multiple operators in a row (e.g. 5++2, 5*/2) but allow for negative numbers (e.g. 5*-2)
-    const multipleOperatorsRegex = /([\+\-\*\/]){2,}/;
+    const multipleOperatorsRegex = /([\+\*\/]){2,}|(\-){3,}/;
     if (multipleOperatorsRegex.test(sanitizedExpression.replace(/\s/g, ''))) {
-         // Allow things like '5 * -2' or '5+-2'
-        const cleanedForNegative = sanitizedExpression.replace(/(\d)\s*([\+\-\*\/])\s*-\s*(\d)/g, '$1$2-$3');
-        if (multipleOperatorsRegex.test(cleanedForNegative.replace(/\s/g, ''))) {
-            return null;
-        }
+        return null;
     }
-
+    
     // Prevent expressions starting or ending with operators (except for unary minus)
     if (/^[\+\*\/]/.test(sanitizedExpression) || /[\+\-\*\/]$/.test(sanitizedExpression)) {
         return null;
@@ -41,8 +37,6 @@ export function calculateExpression(expression: string): number | null {
     // Prevent unsafe constructs like `5(2)` which could be misinterpreted
     const implicitMultiplicationRegex = /(\d)\(/;
     if (implicitMultiplicationRegex.test(sanitizedExpression.replace(/\s/g, ''))) {
-        // To be safe, we can either reject it or explicitly handle it.
-        // For now, rejecting is safer.
         return null;
     }
 
