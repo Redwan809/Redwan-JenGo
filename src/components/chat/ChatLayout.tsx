@@ -69,11 +69,8 @@ export default function ChatLayout() {
         sender: 'ai',
       };
       
-      // Re-add a short delay to simulate "thinking" for a better UX.
-      setTimeout(() => {
-        setMessages(prev => [...prev, aiMessage]);
-        setIsLoading(false);
-      }, 1000);
+      setMessages(prev => [...prev, aiMessage]);
+      setIsLoading(false);
 
     } catch (error) {
       console.error("Error getting AI response:", error);

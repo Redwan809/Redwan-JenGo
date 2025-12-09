@@ -18,16 +18,19 @@ export function getSituationalResponse(userInput: string, history: Message[]): s
 
     // Situation 2: User asks a vague question like "how" or "why"
     if (["how", "why", "কেমনে", "কেন", "কভাবে"].includes(userInput)) {
-        if (lastMessage) {
+        if (lastMessage?.text) {
             return `আপনি "${lastMessage.text}"-এর জবাবে এটি জিজ্ঞেস করছেন? আরেকটু বুঝিয়ে বললে আমার উত্তর দিতে সুবিধা হতো। 😊`;
         }
         return "আপনি কি জানতে চাইছেন, তা আরেকটু বিস্তারিত বলতে পারবেন?";
     }
     
     // Situation 3: User says "good" or "fine" after AI asks how they are
-    if (lastMessage && lastMessage.sender === 'ai' && lastMessage.text.includes("কেমন আছেন")) {
+    if (lastAiMessage && lastAiMessage.text.includes("কেমন আছেন")) {
         if (["ভালো", "ভাল", "fine", "good", "bhalo", "valo", "চলে যাচ্ছে"].some(s => userInput.includes(s))) {
-            return "শুনে খুব ভালো লাগলো! 😊";
+            // But check for negative context
+            if (!["না", "নি", "নেই", "not"].some(neg => userInput.includes(neg))) {
+                 return "শুনে খুব ভালো লাগলো! 😊";
+            }
         }
     }
     
