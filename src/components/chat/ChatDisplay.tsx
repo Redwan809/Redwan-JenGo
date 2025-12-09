@@ -12,14 +12,14 @@ type ChatDisplayProps = {
 
 const ChatDisplay = ({ messages, isLoading }: ChatDisplayProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
+    scrollToBottom();
   }, [messages, isLoading]);
 
   return (
@@ -29,6 +29,7 @@ const ChatDisplay = ({ messages, isLoading }: ChatDisplayProps) => {
           <ChatMessage key={msg.id} message={msg} />
         ))}
         {isLoading && <AILoader />}
+        <div ref={messagesEndRef} />
       </div>
     </div>
   );

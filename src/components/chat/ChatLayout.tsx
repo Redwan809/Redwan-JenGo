@@ -89,7 +89,7 @@ export default function ChatLayout() {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full bg-background text-foreground">
+      <div className="flex h-full w-full bg-background text-foreground">
         <Sidebar className="w-[260px]">
           <ChatSidebar />
         </Sidebar>
