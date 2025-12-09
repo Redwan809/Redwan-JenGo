@@ -6,7 +6,7 @@ import ChatSidebar from './ChatSidebar';
 import ChatHeader from './ChatHeader';
 import ChatDisplay from './ChatDisplay';
 import ChatInput from './ChatInput';
-import { generateAIChatResponse } from '@/ai/flows/generate-ai-chat-response';
+import { getAiResponse } from '@/app/actions';
 
 
 export type Message = {
@@ -39,11 +39,11 @@ export default function ChatLayout() {
     setIsLoading(true);
 
     try {
-      const aiResponse = await generateAIChatResponse({ message: text });
+      const aiResponse = await getAiResponse(text);
 
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
-        text: aiResponse.response,
+        text: aiResponse,
         sender: 'ai',
       };
       
