@@ -67,9 +67,9 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   }
   
   // 2. Check for dictionary queries (Optimized with Map)
-  const dictionaryMatch = cleanedInput.match(/(?:what is the meaning of|meaning of|ortho ki|অর্থ কী|meaning ki|এর মানে কি|er bangla meaning ki|এর বাংলা কি| মানে কি)\s*(\w+)/) || cleanedInput.match(/(\w+)\s*(?:er ortho ki|'s meaning|ortho ki|এর অর্থ কী|অর্থ কী|meaning ki| মানে কি| বাংলা কি| মানে কি)/);
+  const dictionaryMatch = cleanedInput.match(/(?:what is the meaning of|meaning of|ortho ki|অর্থ কী|meaning ki|এর মানে কি|er bangla meaning ki|এর বাংলা কি| মানে কি)\s+([\w\s]+)/) || cleanedInput.match(/([\w\s]+?)\s+(?:er ortho ki|'s meaning|ortho ki|এর অর্থ কী|অর্থ কী|meaning ki| মানে কি| বাংলা কি| মানে কি)/);
   if (dictionaryMatch) {
-    const wordToFind = (dictionaryMatch[1] || dictionaryMatch[2] || "").toLowerCase();
+    const wordToFind = (dictionaryMatch[1] || dictionaryMatch[2] || "").trim().toLowerCase();
     if (wordToFind) {
         const meaning = dictionaryMap.get(wordToFind);
         if (meaning) {
@@ -99,4 +99,3 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   // 5. If no intent is matched, return a default message
   return "দুঃখিত, আমি আপনার কথা বুঝতে পারিনি। 😕 আমাকে অন্যভাবে জিজ্ঞেস করতে পারেন?";
 }
-
