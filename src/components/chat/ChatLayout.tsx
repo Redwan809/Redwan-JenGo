@@ -82,7 +82,7 @@ export default function ChatLayout() {
       setTimeout(() => {
         setMessages(prev => [...prev, aiMessage]);
         setIsLoading(false);
-      }, 1000);
+      }, 2000);
 
     } catch (error) {
       console.error("Error getting AI response:", error);
