@@ -1,7 +1,8 @@
 
 "use server";
 
-import intents from '@/lib/intents.json';
+import generalIntents from '@/lib/intents/general.json';
+import socialIntents from '@/lib/intents/social.json';
 
 type Intent = {
   tag: string;
@@ -9,7 +10,10 @@ type Intent = {
   responses: string[];
 };
 
-const intentData: { intents: Intent[] } = intents;
+const allIntents: Intent[] = [
+  ...generalIntents.intents,
+  ...socialIntents.intents
+];
 
 /**
  * Simulates fetching an AI response based on user input.
@@ -23,7 +27,7 @@ export async function getAiResponse(userInput: string): Promise<string> {
   // Remove punctuation from the end of the input and trim whitespace.
   const lowerText = userInput.toLowerCase().replace(/[.,!?;:\"']$/, "").trim();
 
-  for (const intent of intentData.intents) {
+  for (const intent of allIntents) {
     for (const pattern of intent.patterns) {
       if (lowerText.includes(pattern.toLowerCase())) {
         const responses = intent.responses;
