@@ -67,7 +67,7 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   }
   
   // 2. Check for dictionary queries (Optimized with Map)
-  const dictionaryMatch = cleanedInput.match(/(?:what is the meaning of|meaning of|ortho ki|অর্থ কী|meaning ki|এর মানে কি|er bangla meaning ki|এর বাংলা কি)\s*(\w+)/) || cleanedInput.match(/(\w+)\s*(?:er ortho ki|'s meaning|ortho ki|এর অর্থ কী|অর্থ কী|meaning ki| माने की| বাংলা কি)/);
+  const dictionaryMatch = cleanedInput.match(/(?:what is the meaning of|meaning of|ortho ki|অর্থ কী|meaning ki|এর মানে কি|er bangla meaning ki|এর বাংলা কি| মানে কি)\s*(\w+)/) || cleanedInput.match(/(\w+)\s*(?:er ortho ki|'s meaning|ortho ki|এর অর্থ কী|অর্থ কী|meaning ki| মানে কি| বাংলা কি| মানে কি)/);
   if (dictionaryMatch) {
     const wordToFind = (dictionaryMatch[1] || dictionaryMatch[2] || "").toLowerCase();
     if (wordToFind) {
@@ -78,6 +78,7 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
     }
   }
 
+
   // 3. Check for situational/contextual responses
   const situationalResponse = getSituationalResponse(cleanedInput, history);
   if (situationalResponse) {
@@ -87,8 +88,9 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   // 4. If not a math problem or situational, check for general intents
   for (const intent of allIntents) {
     for (const pattern of intent.patterns) {
-      // Use includes for broader matching
-      if (cleanedInput.includes(pattern.toLowerCase())) {
+      // Use a regex for whole word matching to avoid partial matches (e.g., 'love' in 'glove')
+      const patternRegex = new RegExp(`\\b${pattern.toLowerCase()}\\b`);
+      if (patternRegex.test(cleanedInput)) {
         const responses = intent.responses;
         return responses[Math.floor(Math.random() * responses.length)];
       }
