@@ -93,6 +93,27 @@ export default function ChatLayout() {
   };
 
   const handleClearChat = () => {
+    if (messages.length === 0 || (messages.length === 1 && messages[0].id === 'initial-welcome')) {
+      return; // Do nothing if there's nothing to save.
+    }
+    
+    // 1. Convert messages to JSON format
+    const jsonString = JSON.stringify(messages, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    // 2. Create a temporary link to trigger the download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat-history-${new Date().toISOString()}.json`;
+    document.body.appendChild(a);
+    a.click();
+
+    // 3. Clean up the temporary link and URL object
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    // 4. Clear the chat from localStorage and state
     localStorage.removeItem('chat-messages');
     setMessages(initialMessages);
   };
