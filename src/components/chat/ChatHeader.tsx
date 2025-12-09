@@ -8,7 +8,7 @@ const ChatHeader = () => {
       >
         Redwan-Intel
       </span>
-      <span className="ml-2 text-foreground/80">v2.3</span>
+      <span className="ml-2 text-foreground/80">v1.1</span>
     </div>
   );
 };
