@@ -55,7 +55,7 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   }
 
   // 2. Check for dictionary queries
-  const dictionaryMatch = cleanedInput.match(/^(?:what is the meaning of|meaning of|ortho ki|অর্থ কী)\s*(\w+)/) || cleanedInput.match(/^(\w+)\s*(?:er ortho ki|'s meaning|ortho ki|এর অর্থ কী|অর্থ কী)/);
+  const dictionaryMatch = cleanedInput.match(/^(?:what is the meaning of|meaning of|ortho ki|অর্থ কী|meaning ki|এর মানে কি|এর বাংলা কি)\s*(\w+)/) || cleanedInput.match(/^(\w+)\s*(?:er ortho ki|'s meaning|ortho ki|এর অর্থ কী|অর্থ কী|meaning ki| माने की| বাংলা কি)/);
   if (dictionaryMatch) {
     const wordToFind = dictionaryMatch[1];
     const dictionary: DictionaryEntry[] = dictionaryData.dictionary;
