@@ -6,7 +6,8 @@ import ChatSidebar from './ChatSidebar';
 import ChatHeader from './ChatHeader';
 import ChatDisplay from './ChatDisplay';
 import ChatInput from './ChatInput';
-import { getAiResponse } from '@/app/actions';
+import { generateAIChatResponse } from '@/ai/flows/generate-ai-chat-response';
+
 
 export type Message = {
   id: string;
@@ -14,14 +15,16 @@ export type Message = {
   sender: 'user' | 'ai';
 };
 
+const initialMessages: Message[] = [
+  { 
+    id: 'initial-welcome', 
+    text: 'Hello! I am Redwan-Intel. How can I help you today?', 
+    sender: 'ai' 
+  }
+];
+
 export default function ChatLayout() {
-  const [messages, setMessages] = useState<Message[]>([
-    { 
-      id: 'initial-welcome', 
-      text: 'Hello! I am Redwan-Intel. How can I help you today?', 
-      sender: 'ai' 
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSendMessage = async (text: string) => {
@@ -36,11 +39,11 @@ export default function ChatLayout() {
     setIsLoading(true);
 
     try {
-      const aiResponseText = await getAiResponse(text);
+      const aiResponse = await generateAIChatResponse({ message: text });
 
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
-        text: aiResponseText,
+        text: aiResponse.response,
         sender: 'ai',
       };
       

@@ -5,6 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Redwan Intel AI Chat",
   description: "An AI chat application by Redwan.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
