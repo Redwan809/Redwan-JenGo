@@ -20,7 +20,8 @@ export async function getAiResponse(userInput: string): Promise<string> {
   // Simulate network/processing delay to mimic AI thinking time.
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  const lowerText = userInput.toLowerCase().trim();
+  // Remove punctuation from the end of the input and trim whitespace.
+  const lowerText = userInput.toLowerCase().replace(/[.,!?;:\"']$/, "").trim();
 
   for (const intent of intentData.intents) {
     for (const pattern of intent.patterns) {
