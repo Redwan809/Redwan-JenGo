@@ -60,8 +60,8 @@ export default function ChatLayout() {
     setIsLoading(true);
 
     try {
-      // Pass the entire message history to the AI for context
-      const aiResponse = await getAiResponse(text, newMessages);
+      // Pass the recent message history to the AI for context
+      const aiResponse = await getAiResponse(text, newMessages.slice(-5));
 
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
@@ -69,11 +69,8 @@ export default function ChatLayout() {
         sender: 'ai',
       };
       
-      // Simulate thinking time
-      setTimeout(() => {
-        setMessages(prev => [...prev, aiMessage]);
-        setIsLoading(false);
-      }, 2000);
+      setMessages(prev => [...prev, aiMessage]);
+      setIsLoading(false);
 
     } catch (error) {
       console.error("Error getting AI response:", error);

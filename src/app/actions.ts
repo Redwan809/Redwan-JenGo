@@ -32,6 +32,13 @@ const allIntents: Intent[] = [
   ...(emojiIntents as IntentData).intents,
 ];
 
+// Optimize dictionary for O(1) lookup
+const dictionaryMap: { [key: string]: string } = {};
+(dictionaryData.dictionary as DictionaryEntry[]).forEach(entry => {
+  dictionaryMap[entry.en.toLowerCase()] = entry.bn;
+});
+
+
 /**
  * Fetches an AI response based on user input and conversation context.
  * 1. Tries to solve a math expression.
@@ -40,7 +47,7 @@ const allIntents: Intent[] = [
  * 4. Looks for a matching intent.
  * 5. Returns a default fallback message.
  * @param userInput The message from the user.
- * @param history The entire chat history.
+ * @param history The recent chat history.
  * @returns A promise that resolves to the AI's response string.
  */
 export async function getAiResponse(userInput: string, history: Message[]): Promise<string> {
@@ -60,10 +67,9 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   const dictionaryMatch = cleanedInput.match(/(?:what is the meaning of|meaning of|ortho ki|অর্থ কী|meaning ki|এর মানে কি|এর বাংলা কি)\s*(\w+)/) || cleanedInput.match(/(\w+)\s*(?:er ortho ki|'s meaning|ortho ki|এর অর্থ কী|অর্থ কী|meaning ki| माने की| বাংলা কি|er bangla meaning ki)/);
   if (dictionaryMatch) {
     const wordToFind = dictionaryMatch[1];
-    const dictionary: DictionaryEntry[] = dictionaryData.dictionary;
-    const foundWord = dictionary.find(entry => entry.en.toLowerCase() === wordToFind);
-    if (foundWord) {
-      return `"${foundWord.en}" এর অর্থ হলো "${foundWord.bn}"।`;
+    const meaning = dictionaryMap[wordToFind];
+    if (meaning) {
+      return `"${wordToFind}" এর অর্থ হলো "${meaning}"।`;
     }
   }
 
