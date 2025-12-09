@@ -69,9 +69,11 @@ export default function ChatLayout() {
         sender: 'ai',
       };
       
-      // Removed the artificial 2-second delay. Respond immediately.
-      setMessages(prev => [...prev, aiMessage]);
-      setIsLoading(false);
+      // Re-add a short delay to simulate "thinking" for a better UX.
+      setTimeout(() => {
+        setMessages(prev => [...prev, aiMessage]);
+        setIsLoading(false);
+      }, 1000);
 
     } catch (error) {
       console.error("Error getting AI response:", error);
