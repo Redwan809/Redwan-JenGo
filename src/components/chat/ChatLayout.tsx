@@ -64,13 +64,11 @@ export default function ChatLayout() {
       sender: 'user',
     };
     
-    // Optimistic UI update: Add user message immediately
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setIsLoading(true);
 
     try {
-      // Pass only the recent message history to the AI for context and performance.
       const aiResponseText = await getAiResponse(text, newMessages.slice(-5));
 
       const aiMessage: Message = {
@@ -79,8 +77,10 @@ export default function ChatLayout() {
         sender: 'ai',
       };
       
-      // AI Response is added immediately after receiving it
-      setMessages(prev => [...prev, aiMessage]);
+      setTimeout(() => {
+        setMessages(prev => [...prev, aiMessage]);
+        setIsLoading(false);
+      }, 2000);
 
     } catch (error) {
       console.error("Error getting AI response:", error);
@@ -90,8 +90,7 @@ export default function ChatLayout() {
         sender: 'ai',
       };
       setMessages(prev => [...prev, errorMessage]);
-    } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
