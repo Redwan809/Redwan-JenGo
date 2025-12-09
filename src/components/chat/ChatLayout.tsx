@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import ChatSidebar from './ChatSidebar';
 import ChatHeader from './ChatHeader';
@@ -25,8 +25,26 @@ const initialMessages: Message[] = [
 ];
 
 export default function ChatLayout() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Load messages from localStorage on initial render
+  useEffect(() => {
+    const savedMessages = localStorage.getItem('chat-messages');
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages));
+    } else {
+      setMessages(initialMessages);
+    }
+  }, []);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('chat-messages', JSON.stringify(messages));
+    }
+  }, [messages]);
+
 
   const handleSendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
