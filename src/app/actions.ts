@@ -1,8 +1,15 @@
 
 "use server";
 
-// The GenAI flow import is kept for future expandability, as requested.
-// import { generateAIChatResponse } from '@/ai/flows/generate-ai-chat-response';
+import intents from '@/lib/intents.json';
+
+type Intent = {
+  tag: string;
+  patterns: string[];
+  responses: string[];
+};
+
+const intentData: { intents: Intent[] } = intents;
 
 /**
  * Simulates fetching an AI response based on user input.
@@ -11,26 +18,19 @@
  */
 export async function getAiResponse(userInput: string): Promise<string> {
   // Simulate network/processing delay to mimic AI thinking time.
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
   const lowerText = userInput.toLowerCase().trim();
 
-  if (lowerText === "hi") {
-    return "Hi";
-  } else if (lowerText === "hello") {
-    return "Hello";
-  } else {
-    // As per the user's original JavaScript, the default response is "No".
-    // This part can be easily replaced with a call to a real GenAI flow.
-    /*
-    try {
-      const result = await generateAIChatResponse({ message: userInput });
-      return result.response;
-    } catch (error) {
-      console.error("AI response generation failed:", error);
-      return "Sorry, I encountered an error. Please try again.";
+  for (const intent of intentData.intents) {
+    for (const pattern of intent.patterns) {
+      if (lowerText.includes(pattern.toLowerCase())) {
+        const responses = intent.responses;
+        return responses[Math.floor(Math.random() * responses.length)];
+      }
     }
-    */
-    return "No";
   }
+
+  // A default response in Bengali if no intent is matched.
+  return "দুঃখিত, আমি আপনার কথা বুঝতে পারিনি। 😕 আমাকে অন্যভাবে জিজ্ঞেস করতে পারেন?";
 }
