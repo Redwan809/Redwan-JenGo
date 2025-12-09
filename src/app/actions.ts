@@ -3,6 +3,7 @@
 
 import generalIntents from "@/lib/intents/general.json";
 import socialIntents from "@/lib/intents/social.json";
+import identityIntents from "@/lib/intents/identity.json";
 import { calculateExpression } from "@/lib/math-parser";
 import { getSituationalResponse } from "@/lib/situational-logic";
 import type { Message } from "@/components/chat/ChatLayout";
@@ -20,6 +21,7 @@ type IntentData = {
 const allIntents: Intent[] = [
   ...(generalIntents as IntentData).intents,
   ...(socialIntents as IntentData).intents,
+  ...(identityIntents as IntentData).intents,
 ];
 
 /**
