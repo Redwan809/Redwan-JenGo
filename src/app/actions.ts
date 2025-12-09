@@ -91,9 +91,7 @@ function searchDictionary(input: string): string | null {
 function findIntent(cleanedInput: string): Intent | null {
   for (const intent of allIntents) {
     for (const pattern of intent.patterns) {
-      // এখানে সম্পূর্ণ শব্দ ম্যাচ করা হচ্ছে, শব্দের অংশ নয়
-      const regex = new RegExp(`\\b${pattern.toLowerCase()}\\b`, 'i');
-      if (regex.test(cleanedInput)) {
+      if (cleanedInput.includes(pattern.toLowerCase())) {
         return intent; // ম্যাচ পাওয়া গেলে সাথে সাথে রিটার্ন করবে
       }
     }
