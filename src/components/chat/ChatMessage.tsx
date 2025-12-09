@@ -20,31 +20,22 @@ const AIAvatar = () => (
 
 const Typewriter = ({ text }: { text: string }) => {
   const [displayedText, setDisplayedText] = useState('');
-  const [isTyping, setIsTyping] = useState(true);
 
   useEffect(() => {
-    setDisplayedText(''); // Reset on new message
-    setIsTyping(true);
-    let i = 0;
-    const intervalId = setInterval(() => {
-      if (i < text.length) {
-        setDisplayedText(prev => prev + text.charAt(i));
-        i++;
-      } else {
-        clearInterval(intervalId);
-        setIsTyping(false);
-      }
-    }, 20); // Adjust typing speed here (milliseconds)
+    // Set a small delay to simulate thinking before showing the whole message
+    const timeoutId = setTimeout(() => {
+      setDisplayedText(text);
+    }, 50); // A very short delay
 
-    return () => clearInterval(intervalId);
+    return () => clearTimeout(timeoutId);
   }, [text]);
 
-  return (
-    <>
-      {displayedText}
-      {isTyping && <span className="animate-pulse">|</span>}
-    </>
-  );
+  // Show a blinking cursor while waiting for the text to appear
+  if (!displayedText) {
+    return <span className="animate-pulse">|</span>;
+  }
+
+  return <>{displayedText}</>;
 };
 
 
