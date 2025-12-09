@@ -8,6 +8,7 @@ import knowledgeIntents from "@/lib/intents/knowledge.json";
 import historyIntents from "@/lib/intents/history.json";
 import scienceIntents from "@/lib/intents/science.json";
 import creativeIntents from "@/lib/intents/creative.json";
+import abuseIntents from "@/lib/intents/abuse.json";
 import dictionaryData from "@/lib/dictionary.json";
 import { calculateExpression } from "@/lib/math-parser";
 import { getSituationalResponse } from "@/lib/situational-logic";
@@ -39,6 +40,7 @@ const allIntents: Intent[] = [
   ...(historyIntents as IntentData).intents,
   ...(scienceIntents as IntentData).intents,
   ...(creativeIntents as IntentData).intents,
+  ...(abuseIntents as IntentData).intents,
 ];
 
 /**
