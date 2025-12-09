@@ -31,7 +31,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
           'rounded-[20px] px-5 py-3 text-left leading-relaxed',
           isUser
             ? 'rounded-br-sm bg-secondary'
-            : 'bg-transparent'
+            : 'rounded-bl-sm bg-card'
         )}
       >
         {message.text}
