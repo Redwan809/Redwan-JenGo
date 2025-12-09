@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -35,11 +36,14 @@ export default function ChatLayout() {
       text,
       sender: 'user',
     };
-    setMessages(prev => [...prev, userMessage]);
+    
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setIsLoading(true);
 
     try {
-      const aiResponse = await getAiResponse(text);
+      // Pass the entire message history to the AI for context
+      const aiResponse = await getAiResponse(text, newMessages);
 
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
