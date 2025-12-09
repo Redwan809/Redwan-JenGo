@@ -1,5 +1,6 @@
 "use server";
 
+// ১. সব JSON ফাইল ইম্পোর্ট করা হচ্ছে
 import generalIntents from "@/lib/intents/general.json";
 import socialIntents from "@/lib/intents/social.json";
 import identityIntents from "@/lib/intents/identity.json";
@@ -10,6 +11,7 @@ import scienceIntents from "@/lib/intents/science.json";
 import creativeIntents from "@/lib/intents/creative.json";
 import abuseIntents from "@/lib/intents/abuse.json";
 import dictionaryData from "@/lib/dictionary.json";
+
 import { calculateExpression } from "@/lib/math-parser";
 import { getSituationalResponse } from "@/lib/situational-logic";
 import type { Message } from "@/components/chat/ChatLayout";
@@ -30,7 +32,8 @@ type DictionaryEntry = {
   bn: string;
 };
 
-// --- Data Aggregation ---
+// --- ২. সব ফাইলের ডাটা এক জায়গায় (allIntents) জমা করা হচ্ছে ---
+// এখানে যতগুলো ফাইল ইম্পোর্ট করেছেন, সবগুলোর ডাটা merged হয়ে যাচ্ছে।
 const allIntents: Intent[] = [
   ...(generalIntents as IntentData).intents,
   ...(socialIntents as IntentData).intents,
@@ -44,14 +47,12 @@ const allIntents: Intent[] = [
 ];
 
 /**
- * Smart Dictionary Search
- * Handles: "Meaning of X", "X mane ki", "X er ortho", "Bangla of X"
+ * ডিকশনারি বা শব্দার্থ খোঁজার ফাংশন
  */
 function searchDictionary(input: string): string | null {
   const dictionary: DictionaryEntry[] = dictionaryData.dictionary;
   const lowerInput = input.toLowerCase();
 
-  // Regex to find the word, trying different patterns.
   const matchPattern1 = lowerInput.match(/(?:what is the meaning of|meaning of|what is)\s*([a-zA-Z]+)/i);
   const matchPattern2 = lowerInput.match(/^(.*?)\s*(?:mane ki|er ortho ki|ortho ki|er bangla ki|bangla ki|মানে কি|এর অর্থ কি|এর বাংলা কি)/i);
   
@@ -61,7 +62,7 @@ function searchDictionary(input: string): string | null {
     wordToFind = matchPattern1[1].trim();
   } else if (matchPattern2 && matchPattern2[1]) {
     wordToFind = matchPattern2[1].trim();
-  } else if (input.trim().split(/\s+/).length === 1) { // Fallback for a single word
+  } else if (input.trim().split(/\s+/).length === 1) { 
     wordToFind = input.trim();
   }
   
@@ -77,59 +78,60 @@ function searchDictionary(input: string): string | null {
 }
 
 /**
- * Finds a matching intent from the provided list by checking if the input includes the pattern.
+ * ৩. ইনটেন্ট খোঁজার ফাংশন (Pattern Matching)
+ * এই ফাংশনটি allIntents (মানে সব ফাইলের সমষ্টি) এর ওপর লুপ চালায়।
  */
 function findIntent(cleanedInput: string): Intent | null {
+    // এখানে সব ফাইলের ডাটা চেক করা হচ্ছে
     for (const intent of allIntents) {
         for (const pattern of intent.patterns) {
-            // Use a simple `includes` check for broader matching.
+            // যদি ইনপুটের সাথে কোনো প্যাটার্ন মিলে যায়
             if (cleanedInput.includes(pattern.toLowerCase())) {
-                return intent;
+                return intent; // ম্যাচ পাওয়া গেলে সাথে সাথে রিটার্ন করবে
             }
         }
     }
-    return null;
+    return null; // কোনো ফাইলে না পেলে নাল রিটার্ন করবে
 }
 
 
 // --- Main Action Function ---
 
-/**
- * Fetches an AI response with a simplified and more direct logic.
- */
 export async function getAiResponse(userInput: string, history: Message[]): Promise<string> {
   const normalizedInput = userInput.trim().toLowerCase().replace(/ø/g, 'o');
   const cleanedInput = normalizedInput.replace(/[?.,!]/g, '');
 
-  // Priority 1: Math Check
+  // ধাপ ১: ম্যাথ বা অংক চেক
   try {
     const mathResult = calculateExpression(cleanedInput);
     if (mathResult !== null) {
       return `ফলাফল: ${mathResult}`;
     }
   } catch (error) {
-    // Not a math expression, ignore and continue.
+    // ম্যাথ না হলে পরের ধাপে যাবে
   }
 
-  // Priority 2: Dictionary Check
+  // ধাপ ২: ডিকশনারি চেক
   const dictionaryResponse = searchDictionary(cleanedInput);
   if (dictionaryResponse) {
     return dictionaryResponse;
   }
 
-  // Priority 3: Situational Logic (Context-Aware)
+  // ধাপ ৩: পরিস্থিতি বা কনটেক্সট চেক
   const situationalResponse = getSituationalResponse(cleanedInput, history);
   if (situationalResponse) {
     return situationalResponse;
   }
 
-  // Priority 4: General Intent Matching
+  // ধাপ ৪: সব জেসন ফাইল চেক (General Intent Matching)
   const matchedIntent = findIntent(cleanedInput);
+  
   if (matchedIntent) {
+    // যদি কোনো একটি ফাইলে ম্যাচ পায়, এখান থেকেই উত্তর দিবে
     const responses = matchedIntent.responses;
     return responses[Math.floor(Math.random() * responses.length)];
   }
 
-  // Priority 5: Fallback Default
+  // ধাপ ৫: কোথাও কিছু না পেলে (Fallback)
   return "দুঃখিত, আমি আপনার কথা ঠিক বুঝতে পারিনি। 😕 দয়া করে একটু সহজভাবে বা অন্যভাবে জিজ্ঞেস করবেন?";
 }
