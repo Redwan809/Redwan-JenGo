@@ -17,7 +17,7 @@ export function getSituationalResponse(userInput: string, history: Message[]): s
     }
 
     // Situation 2: User asks a vague question like "how" or "why"
-    if (["how", "why", "কেমনে", "কেন", "কভাবে"].includes(userInput)) {
+    if (["how", "why", "কেমনে", "কেন", "kivabe"].includes(userInput)) {
         if (lastMessage?.text) {
             return `আপনি "${lastMessage.text}"-এর জবাবে এটি জিজ্ঞেস করছেন? আরেকটু বুঝিয়ে বললে আমার উত্তর দিতে সুবিধা হতো। 😊`;
         }
@@ -55,7 +55,7 @@ export function getSituationalResponse(userInput: string, history: Message[]): s
     }
 
     // Situation 8: User asks for identity again
-    if (history.length > 5 && ["তুমি কে", "আপনার নাম কি", "tumi k"].some(s => userInput.includes(s))) {
+    if (history.length > 5 && ["তুমি কে", "আপনার নাম কি", "tumi ke"].some(s => userInput.includes(s))) {
         return "আমার পরিচয় তো আগেই দিয়েছি। আমি আপনার বন্ধুসুলভ ভার্চুয়াল অ্যাসিস্ট্যান্ট! 🤖";
     }
 
