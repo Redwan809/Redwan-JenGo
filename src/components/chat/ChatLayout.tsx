@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import ChatSidebar from './ChatSidebar';
 import ChatHeader from './ChatHeader';
@@ -15,14 +15,19 @@ export type Message = {
 };
 
 export default function ChatLayout() {
-  const [messages, setMessages] = useState<Message[]>([
-    { 
-      id: 'initial-welcome', 
-      text: 'Hello! I am Redwan-Intel. How can I help you today?', 
-      sender: 'ai' 
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Moved initial message to useEffect to avoid hydration errors.
+    setMessages([
+      { 
+        id: 'initial-welcome', 
+        text: 'Hello! I am Redwan-Intel. How can I help you today?', 
+        sender: 'ai' 
+      }
+    ]);
+  }, []);
 
   const handleSendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -35,16 +40,27 @@ export default function ChatLayout() {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
-    const aiResponseText = await getAiResponse(text);
+    try {
+      const aiResponseText = await getAiResponse(text);
 
-    const aiMessage: Message = {
-      id: `ai-${Date.now()}`,
-      text: aiResponseText,
-      sender: 'ai',
-    };
-    
-    setIsLoading(false);
-    setMessages(prev => [...prev, aiMessage]);
+      const aiMessage: Message = {
+        id: `ai-${Date.now()}`,
+        text: aiResponseText,
+        sender: 'ai',
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Error getting AI response:", error);
+      const errorMessage: Message = {
+        id: `ai-error-${Date.now()}`,
+        text: "Sorry, I'm having trouble connecting. Please try again later.",
+        sender: 'ai',
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
