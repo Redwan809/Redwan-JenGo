@@ -10,7 +10,7 @@ import historyIntents from "@/lib/intents/history.json";
 import scienceIntents from "@/lib/intents/science.json";
 import creativeIntents from "@/lib/intents/creative.json";
 import abuseIntents from "@/lib/intents/abuse.json";
-// import dictionaryData from "@/lib/dictionary.json"; // ফাইলটি ডিলিট করা হয়েছে
+import banglaMeaningData from "@/lib/intents/bangla-meaning.json";
 
 import { calculateExpression } from "@/lib/math-parser";
 import { getSituationalResponse } from "@/lib/situational-logic";
@@ -45,26 +45,11 @@ const allIntents: Intent[] = [
   ...(abuseIntents as IntentData).intents,
 ];
 
-// --- ডিকশনারির ডেটা এখন এখানেই সংরক্ষিত ---
-const dictionary: DictionaryEntry[] = [
-    { "en": "done", "bn": "সম্পন্ন" },
-    { "en": "hello", "bn": "ওহে" },
-    { "en": "hi", "bn": "ওহে" },
-    { "en": "world", "bn": "বিশ্ব" },
-    { "en": "love", "bn": "ভালোবাসা" },
-    { "en": "friend", "bn": "বন্ধু" },
-    { "en": "code", "bn": "কোড" },
-    { "en": "water", "bn": "পানি" },
-    { "en": "fire", "bn": "আগুন" },
-    { "en": "computer", "bn": "কম্পিউটার" },
-    { "en": "run", "bn": "দৌড়ানো" }
-];
-
-
 /**
  * ডিকশনারি বা শব্দার্থ খোঁজার ফাংশন
  */
 function searchDictionary(input: string): string | null {
+  const dictionary: DictionaryEntry[] = (banglaMeaningData as { dictionary: DictionaryEntry[] }).dictionary;
   const lowerInput = input.toLowerCase();
 
   // বিভিন্ন প্যাটার্ন চেক করা হচ্ছে, যেমন: "love মানে কি", "meaning of love"
