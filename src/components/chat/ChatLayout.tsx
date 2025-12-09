@@ -64,6 +64,7 @@ export default function ChatLayout() {
       sender: 'user',
     };
     
+    // Optimistic UI update: Add user message immediately
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setIsLoading(true);
@@ -78,11 +79,8 @@ export default function ChatLayout() {
         sender: 'ai',
       };
       
-      // Simulate thinking time for a better UX
-      setTimeout(() => {
-        setMessages(prev => [...prev, aiMessage]);
-        setIsLoading(false);
-      }, 2000);
+      // AI Response is added immediately after receiving it
+      setMessages(prev => [...prev, aiMessage]);
 
     } catch (error) {
       console.error("Error getting AI response:", error);
@@ -92,7 +90,8 @@ export default function ChatLayout() {
         sender: 'ai',
       };
       setMessages(prev => [...prev, errorMessage]);
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   };
 
