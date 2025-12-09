@@ -4,6 +4,7 @@
 import generalIntents from "@/lib/intents/general.json";
 import socialIntents from "@/lib/intents/social.json";
 import identityIntents from "@/lib/intents/identity.json";
+import emojiIntents from "@/lib/intents/emoji.json";
 import dictionaryData from "@/lib/dictionary.json";
 import { calculateExpression } from "@/lib/math-parser";
 import { getSituationalResponse } from "@/lib/situational-logic";
@@ -28,6 +29,7 @@ const allIntents: Intent[] = [
   ...(generalIntents as IntentData).intents,
   ...(socialIntents as IntentData).intents,
   ...(identityIntents as IntentData).intents,
+  ...(emojiIntents as IntentData).intents,
 ];
 
 /**
