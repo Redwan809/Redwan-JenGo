@@ -7,6 +7,7 @@ import ChatSidebar from './ChatSidebar';
 import ChatHeader from './ChatHeader';
 import ChatDisplay from './ChatDisplay';
 import ChatInput from './ChatInput';
+import QuickReplies from './QuickReplies';
 import { getAiResponse } from '@/app/actions';
 
 
@@ -107,6 +108,7 @@ export default function ChatLayout() {
         <SidebarInset className="flex flex-col">
           <ChatHeader />
           <ChatDisplay messages={messages} isLoading={isLoading} />
+          <QuickReplies onSendMessage={handleSendMessage} isLoading={isLoading} />
           <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
         </SidebarInset>
       </div>
