@@ -55,7 +55,7 @@ const ChatMessage = ({ message, isLastMessage }: ChatMessageProps) => {
   return (
     <div
       className={cn(
-        'flex max-w-[80%] items-start gap-4',
+        'flex max-w-[80%] items-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500',
         isUser ? 'self-end' : 'self-start'
       )}
     >
