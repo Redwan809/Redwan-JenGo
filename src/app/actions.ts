@@ -24,8 +24,8 @@ const allIntents: Intent[] = [
 
 /**
  * Fetches an AI response based on user input and conversation context.
- * 1. Checks for situational responses based on conversation history.
- * 2. Tries to solve a math expression.
+ * 1. Tries to solve a math expression.
+ * 2. Checks for situational responses based on conversation history.
  * 3. Looks for a matching intent.
  * 4. Returns a default fallback message.
  * @param userInput The message from the user.
@@ -35,23 +35,23 @@ const allIntents: Intent[] = [
 export async function getAiResponse(userInput: string, history: Message[]): Promise<string> {
   const cleanedInput = userInput.trim().toLowerCase().replace(/[?.,!]/g, '');
 
-  // 1. Check for situational/contextual responses first
-  const situationalResponse = getSituationalResponse(cleanedInput, history);
-  if (situationalResponse) {
-    return situationalResponse;
-  }
-
-  // 2. Try to solve as a math problem
+  // 1. Try to solve as a math problem first, as it's more specific.
   try {
     const mathResult = calculateExpression(cleanedInput);
     if (mathResult !== null) {
       return mathResult.toString();
     }
   } catch (error) {
-    // Not a valid math expression, so we continue to intents
+    // Not a valid math expression, so we continue
+  }
+  
+  // 2. Check for situational/contextual responses
+  const situationalResponse = getSituationalResponse(cleanedInput, history);
+  if (situationalResponse) {
+    return situationalResponse;
   }
 
-  // 3. If not a math problem, check for general intents
+  // 3. If not a math problem or situational, check for general intents
   for (const intent of allIntents) {
     for (const pattern of intent.patterns) {
       // Use includes for broader matching
