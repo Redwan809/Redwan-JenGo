@@ -43,7 +43,7 @@ function searchDictionary(input: string): string | null {
 
   // Regex to find the word, trying different patterns.
   const matchPattern1 = lowerInput.match(/^([a-zA-Z]+)\s+(?:mane|ortho|bhab|means|meaning|er bangla|bangla)/i);
-  const matchPattern2 = lowerInput.match(/(?:mane ki|ortho ki|meaning of|what is the meaning of|what is|bangla ki)\s+([a-zA-Z]+)/i);
+  const matchPattern2 = lowerInput.match(/(?:mane ki|ortho ki|meaning of|what is|bangla ki)\s+([a-zA-Z]+)/i);
 
   let wordToFind = "";
 
@@ -73,8 +73,10 @@ function searchDictionary(input: string): string | null {
 function findIntent(cleanedInput: string): Intent | null {
     for (const intent of allIntents) {
         for (const pattern of intent.patterns) {
-            // Use a simple, effective `includes` check.
-            if (cleanedInput.includes(pattern.toLowerCase())) {
+            // Use a regex with word boundaries to ensure whole word matching.
+            // This prevents "love" from matching "valo".
+            const patternRegex = new RegExp(`\\b${pattern.toLowerCase()}\\b`);
+            if (patternRegex.test(cleanedInput)) {
                 return intent;
             }
         }
