@@ -27,23 +27,32 @@ const initialMessages: Message[] = [
 export default function ChatLayout() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isStorageLoading, setIsStorageLoading] = useState(true);
 
   // Load messages from localStorage on initial render
   useEffect(() => {
-    const savedMessages = localStorage.getItem('chat-messages');
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
-    } else {
-      setMessages(initialMessages);
+    try {
+      const savedMessages = localStorage.getItem('chat-messages');
+      if (savedMessages && savedMessages.length > 2) { // Check for non-empty array
+        setMessages(JSON.parse(savedMessages));
+      } else {
+        setMessages(initialMessages);
+      }
+    } catch (e) {
+        // If parsing fails, start with initial messages
+        setMessages(initialMessages);
+    } finally {
+        setIsStorageLoading(false);
     }
   }, []);
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
-    if (messages.length > 0) {
+    // Don't save during the initial load, only on subsequent changes
+    if (!isStorageLoading) {
       localStorage.setItem('chat-messages', JSON.stringify(messages));
     }
-  }, [messages]);
+  }, [messages, isStorageLoading]);
 
 
   const handleSendMessage = async (text: string) => {
@@ -61,16 +70,19 @@ export default function ChatLayout() {
 
     try {
       // Pass only the recent message history to the AI for context and performance.
-      const aiResponse = await getAiResponse(text, newMessages.slice(-5));
+      const aiResponseText = await getAiResponse(text, newMessages.slice(-5));
 
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
-        text: aiResponse,
+        text: aiResponseText,
         sender: 'ai',
       };
       
-      setMessages(prev => [...prev, aiMessage]);
-      setIsLoading(false);
+      // Simulate thinking time for a better UX
+      setTimeout(() => {
+        setMessages(prev => [...prev, aiMessage]);
+        setIsLoading(false);
+      }, 1000);
 
     } catch (error) {
       console.error("Error getting AI response:", error);
@@ -84,9 +96,13 @@ export default function ChatLayout() {
     }
   };
 
+  if (isStorageLoading) {
+    return <div className="flex h-svh w-full items-center justify-center bg-background"></div>;
+  }
+
   return (
     <SidebarProvider>
-      <div className="flex h-full w-full bg-background text-foreground">
+      <div className="flex h-svh w-full bg-background text-foreground">
         <Sidebar className="w-[260px]">
           <ChatSidebar />
         </Sidebar>
