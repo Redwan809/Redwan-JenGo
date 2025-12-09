@@ -10,6 +10,14 @@ export function calculateExpression(expression: string): number | null {
     // Create a mutable copy of the expression
     let sanitizedExpression = expression;
 
+    // First, let's see if there is a valid math expression at the start of the string
+    // This handles cases like "1+1=2 why"
+    const coreMathMatch = sanitizedExpression.match(/^([0-9\s\+\-\*\/\(\)\.÷×]+)/);
+    if (coreMathMatch) {
+        sanitizedExpression = coreMathMatch[1].trim();
+    }
+
+
     // Replace special division and multiplication symbols
     sanitizedExpression = sanitizedExpression.replace(/÷/g, '/').replace(/×/g, '*');
 
