@@ -4,6 +4,7 @@ import generalIntents from "@/lib/intents/general.json";
 import socialIntents from "@/lib/intents/social.json";
 import identityIntents from "@/lib/intents/identity.json";
 import emojiIntents from "@/lib/intents/emoji.json";
+import knowledgeIntents from "@/lib/intents/knowledge.json";
 import dictionaryData from "@/lib/dictionary.json";
 import { calculateExpression } from "@/lib/math-parser";
 import { getSituationalResponse } from "@/lib/situational-logic";
@@ -31,6 +32,7 @@ const allIntents: Intent[] = [
   ...(socialIntents as IntentData).intents,
   ...(identityIntents as IntentData).intents,
   ...(emojiIntents as IntentData).intents,
+  ...(knowledgeIntents as IntentData).intents,
 ];
 
 /**
@@ -42,9 +44,8 @@ function searchDictionary(input: string): string | null {
   const lowerInput = input.toLowerCase();
 
   // Regex to find the word, trying different patterns.
-  // "love mane ki", "what is love", "love bangla ki"
   const matchPattern1 = lowerInput.match(/^(.*?)\s+(?:mane|ortho|meaning|bangla)\s+ki/i);
-  const matchPattern2 = lowerInput.match(/(?:what is|meaning of)\s+(.*)/i);
+  const matchPattern2 = lowerInput.match(/(?:what is the meaning of|what is|meaning of)\s+(.*)/i);
   const matchPattern3 = lowerInput.match(/^(.*)/i); // Fallback for single word.
 
   let wordToFind = "";
@@ -54,9 +55,10 @@ function searchDictionary(input: string): string | null {
   } else if (matchPattern2 && matchPattern2[1]) {
     wordToFind = matchPattern2[1].trim();
   } else if (matchPattern3 && matchPattern3[1] && input.trim().split(/\s+/).length <= 2) {
-    // Single word or "love bangla"
     const parts = input.trim().split(/\s+/);
     if(parts[parts.length-1].toLowerCase() === 'ki' || parts[parts.length-1].toLowerCase() === 'mane'){
+       wordToFind = parts[0];
+    } else if (parts[parts.length-1].toLowerCase() === 'bangla'){
        wordToFind = parts[0];
     } else {
        wordToFind = input.trim();
@@ -65,7 +67,6 @@ function searchDictionary(input: string): string | null {
   
   if (!wordToFind) return null;
 
-  // Handles cases like "love bangla"
   const singleWord = wordToFind.split(" ")[0];
 
   const entry = dictionary.find(d => d.en.toLowerCase() === singleWord.toLowerCase());
