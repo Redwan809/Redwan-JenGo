@@ -10,7 +10,7 @@ import historyIntents from "@/lib/intents/history.json";
 import scienceIntents from "@/lib/intents/science.json";
 import creativeIntents from "@/lib/intents/creative.json";
 import abuseIntents from "@/lib/intents/abuse.json";
-import dictionaryData from "@/lib/dictionary.json";
+// import dictionaryData from "@/lib/dictionary.json"; // ফাইলটি ডিলিট করা হয়েছে
 
 import { calculateExpression } from "@/lib/math-parser";
 import { getSituationalResponse } from "@/lib/situational-logic";
@@ -33,7 +33,6 @@ type DictionaryEntry = {
 };
 
 // --- ২. সব ফাইলের ডাটা এক জায়গায় (allIntents) জমা করা হচ্ছে ---
-// এখানে যতগুলো ফাইল ইম্পোর্ট করেছেন, সবগুলোর ডাটা merged হয়ে যাচ্ছে।
 const allIntents: Intent[] = [
   ...(generalIntents as IntentData).intents,
   ...(socialIntents as IntentData).intents,
@@ -46,32 +45,55 @@ const allIntents: Intent[] = [
   ...(abuseIntents as IntentData).intents,
 ];
 
+// --- ডিকশনারির ডেটা এখন এখানেই সংরক্ষিত ---
+const dictionary: DictionaryEntry[] = [
+    { "en": "done", "bn": "সম্পন্ন" },
+    { "en": "hello", "bn": "ওহে" },
+    { "en": "hi", "bn": "ওহে" },
+    { "en": "world", "bn": "বিশ্ব" },
+    { "en": "love", "bn": "ভালোবাসা" },
+    { "en": "friend", "bn": "বন্ধু" },
+    { "en": "code", "bn": "কোড" },
+    { "en": "water", "bn": "পানি" },
+    { "en": "fire", "bn": "আগুন" },
+    { "en": "computer", "bn": "কম্পিউটার" },
+    { "en": "run", "bn": "দৌড়ানো" }
+];
+
+
 /**
  * ডিকশনারি বা শব্দার্থ খোঁজার ফাংশন
  */
 function searchDictionary(input: string): string | null {
-  const dictionary: DictionaryEntry[] = dictionaryData.dictionary;
   const lowerInput = input.toLowerCase();
 
-  const matchPattern1 = lowerInput.match(/(?:what is the meaning of|meaning of|what is)\s*([a-zA-Z]+)/i);
-  const matchPattern2 = lowerInput.match(/^(.*?)\s*(?:mane ki|er ortho ki|ortho ki|er bangla ki|bangla ki|মানে কি|এর অর্থ কি|এর বাংলা কি)/i);
+  // বিভিন্ন প্যাটার্ন চেক করা হচ্ছে, যেমন: "love মানে কি", "meaning of love"
+  const patterns = [
+    /^(?:what is the meaning of|meaning of|what is)\s+([a-zA-Z]+)/i, // "meaning of love"
+    /^([a-zA-Z]+)\s+(?:mane ki|er ortho ki|ortho ki|er bangla ki|bangla ki|মানে কি|এর অর্থ কি|এর বাংলা কি)/i, // "love মানে কি"
+  ];
   
   let wordToFind = "";
 
-  if (matchPattern1 && matchPattern1[1]) {
-    wordToFind = matchPattern1[1].trim();
-  } else if (matchPattern2 && matchPattern2[1]) {
-    wordToFind = matchPattern2[1].trim();
-  } else if (input.trim().split(/\s+/).length === 1) { 
-    wordToFind = input.trim();
+  for (const regex of patterns) {
+    const match = lowerInput.match(regex);
+    if (match && match[1]) {
+      wordToFind = match[1].trim();
+      break;
+    }
+  }
+
+  // যদি কোনো প্যাটার্ন না মেলে, কিন্তু শুধু একটি শব্দ থাকে
+  if (!wordToFind && lowerInput.trim().split(/\s+/).length === 1 && /^[a-z]+$/.test(lowerInput.trim())) { 
+    wordToFind = lowerInput.trim();
   }
   
   if (!wordToFind) return null;
 
-  const entry = dictionary.find(d => d.en.toLowerCase() === wordToFind.toLowerCase());
+  const entry = dictionary.find(d => d.en.toLowerCase() === wordToFind);
 
   if (entry) {
-    return `"${entry.en}" এর বাংলা অর্থ হলো "${entry.bn}"।`;
+    return `"${entry.en}"-এর বাংলা অর্থ হলো "${entry.bn}"।`;
   }
 
   return null;
@@ -82,16 +104,16 @@ function searchDictionary(input: string): string | null {
  * এই ফাংশনটি allIntents (মানে সব ফাইলের সমষ্টি) এর ওপর লুপ চালায়।
  */
 function findIntent(cleanedInput: string): Intent | null {
-    // এখানে সব ফাইলের ডাটা চেক করা হচ্ছে
-    for (const intent of allIntents) {
-        for (const pattern of intent.patterns) {
-            // যদি ইনপুটের সাথে কোনো প্যাটার্ন মিলে যায়
-            if (cleanedInput.includes(pattern.toLowerCase())) {
-                return intent; // ম্যাচ পাওয়া গেলে সাথে সাথে রিটার্ন করবে
-            }
-        }
+  for (const intent of allIntents) {
+    for (const pattern of intent.patterns) {
+      // এখানে সম্পূর্ণ শব্দ ম্যাচ করা হচ্ছে, শব্দের অংশ নয়
+      const regex = new RegExp(`\\b${pattern.toLowerCase()}\\b`, 'i');
+      if (regex.test(cleanedInput)) {
+        return intent; // ম্যাচ পাওয়া গেলে সাথে সাথে রিটার্ন করবে
+      }
     }
-    return null; // কোনো ফাইলে না পেলে নাল রিটার্ন করবে
+  }
+  return null; // কোনো ফাইলে না পেলে নাল রিটার্ন করবে
 }
 
 
