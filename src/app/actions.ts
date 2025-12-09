@@ -69,9 +69,9 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   // 2. Check for dictionary queries (Optimized with Map)
   const dictionaryMatch = cleanedInput.match(/(?:what is the meaning of|meaning of|ortho ki|অর্থ কী|meaning ki|এর মানে কি|er bangla meaning ki|এর বাংলা কি)\s*(\w+)/) || cleanedInput.match(/(\w+)\s*(?:er ortho ki|'s meaning|ortho ki|এর অর্থ কী|অর্থ কী|meaning ki| माने की| বাংলা কি)/);
   if (dictionaryMatch) {
-    const wordToFind = dictionaryMatch[1] || dictionaryMatch[2];
+    const wordToFind = (dictionaryMatch[1] || dictionaryMatch[2] || "").toLowerCase();
     if (wordToFind) {
-        const meaning = dictionaryMap.get(wordToFind.toLowerCase());
+        const meaning = dictionaryMap.get(wordToFind);
         if (meaning) {
           return `"${wordToFind}" এর অর্থ হলো "${meaning}"।`;
         }
