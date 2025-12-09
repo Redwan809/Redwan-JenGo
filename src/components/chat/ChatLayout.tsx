@@ -60,7 +60,7 @@ export default function ChatLayout() {
     setIsLoading(true);
 
     try {
-      // Pass the recent message history to the AI for context
+      // Pass only the recent message history to the AI for context and performance.
       const aiResponse = await getAiResponse(text, newMessages.slice(-5));
 
       const aiMessage: Message = {
@@ -69,6 +69,7 @@ export default function ChatLayout() {
         sender: 'ai',
       };
       
+      // Removed the artificial 2-second delay. Respond immediately.
       setMessages(prev => [...prev, aiMessage]);
       setIsLoading(false);
 

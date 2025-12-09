@@ -25,6 +25,9 @@ type DictionaryEntry = {
   bn: string;
 };
 
+// --- Optimizations ---
+
+// 1. Combine all intents into a single array on server start, not on every request.
 const allIntents: Intent[] = [
   ...(generalIntents as IntentData).intents,
   ...(socialIntents as IntentData).intents,
@@ -32,10 +35,10 @@ const allIntents: Intent[] = [
   ...(emojiIntents as IntentData).intents,
 ];
 
-// Optimize dictionary for O(1) lookup
-const dictionaryMap: { [key: string]: string } = {};
+// 2. Optimize dictionary for O(1) lookup by creating a Map.
+const dictionaryMap = new Map<string, string>();
 (dictionaryData.dictionary as DictionaryEntry[]).forEach(entry => {
-  dictionaryMap[entry.en.toLowerCase()] = entry.bn;
+  dictionaryMap.set(entry.en.toLowerCase(), entry.bn);
 });
 
 
@@ -62,14 +65,16 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   } catch (error) {
     // Not a valid math expression, so we continue
   }
-
-  // 2. Check for dictionary queries
-  const dictionaryMatch = cleanedInput.match(/(?:what is the meaning of|meaning of|ortho ki|অর্থ কী|meaning ki|এর মানে কি|এর বাংলা কি)\s*(\w+)/) || cleanedInput.match(/(\w+)\s*(?:er ortho ki|'s meaning|ortho ki|এর অর্থ কী|অর্থ কী|meaning ki| माने की| বাংলা কি|er bangla meaning ki)/);
+  
+  // 2. Check for dictionary queries (Optimized with Map)
+  const dictionaryMatch = cleanedInput.match(/(?:what is the meaning of|meaning of|ortho ki|অর্থ কী|meaning ki|এর মানে কি|er bangla meaning ki|এর বাংলা কি)\s*(\w+)/) || cleanedInput.match(/(\w+)\s*(?:er ortho ki|'s meaning|ortho ki|এর অর্থ কী|অর্থ কী|meaning ki| माने की| বাংলা কি)/);
   if (dictionaryMatch) {
-    const wordToFind = dictionaryMatch[1];
-    const meaning = dictionaryMap[wordToFind];
-    if (meaning) {
-      return `"${wordToFind}" এর অর্থ হলো "${meaning}"।`;
+    const wordToFind = dictionaryMatch[1] || dictionaryMatch[2];
+    if (wordToFind) {
+        const meaning = dictionaryMap.get(wordToFind.toLowerCase());
+        if (meaning) {
+          return `"${wordToFind}" এর অর্থ হলো "${meaning}"।`;
+        }
     }
   }
 

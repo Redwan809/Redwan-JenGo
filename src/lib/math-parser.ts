@@ -1,59 +1,56 @@
 
 /**
- * Tries to calculate a math expression from a string.
- * Returns the result or null if it's not a valid math expression.
- * This is a safe alternative to using eval().
+ * Safely calculates a math expression from a string.
+ * It's a safer alternative to eval() as it's more restrictive.
  * @param expression The string to evaluate.
- * @returns The result of the calculation or null.
+ * @returns The result of the calculation or null if it's not a valid/safe expression.
  */
 export function calculateExpression(expression: string): number | null {
-    // Create a mutable copy of the expression
-    let sanitizedExpression = expression;
+    // 1. Sanitize and Normalize the expression
+    let sanitizedExpression = expression
+        .trim()
+        .replace(/÷/g, '/')       // Replace special division symbol
+        .replace(/×/g, '*')       // Replace special multiplication symbol
+        .replace(/[{[<]/g, '(')   // Normalize brackets to parentheses
+        .replace(/[}\]>]/g, ')')
+        .replace(/(\d)\(/g, '$1*('); // Add multiplication for cases like 5(2)
 
-    // First, let's see if there is a valid math expression at the start of the string
-    // This handles cases like "1+1=2 why"
-    const coreMathMatch = sanitizedExpression.match(/^([0-9\s\+\-\*\/\(\)\.÷×]+)/);
-    if (coreMathMatch) {
-        sanitizedExpression = coreMathMatch[1].trim();
+    // 2. Strict Validation: Only allow a very specific set of characters.
+    // This is the main security layer.
+    // Allows: numbers (0-9), decimals (.), operators (+, -, *, /), parentheses, and spaces.
+    // It explicitly disallows any letters, equals signs, or other symbols.
+    const mathRegex = /^[0-9\s\+\-\*\/\(\)\.]+$/;
+    if (!mathRegex.test(sanitizedExpression)) {
+        return null;
     }
-
-
-    // Replace special division and multiplication symbols
-    sanitizedExpression = sanitizedExpression.replace(/÷/g, '/').replace(/×/g, '*');
-
-    // Replace other bracket types with parentheses
-    sanitizedExpression = sanitizedExpression.replace(/[{[<]/g, '(').replace(/[}\]>]/g, ')');
     
-    // Add multiplication operator before an opening parenthesis if it's missing
-    // e.g., "5(2)" becomes "5*(2)"
-    sanitizedExpression = sanitizedExpression.replace(/(\d)\(/g, '$1*(');
-
-
-  // Regular expression to check for valid characters in a math expression.
-  // Allows numbers, +, -, *, /, (, ), and spaces.
-  const mathRegex = /^[0-9\s\+\-\*\/\(\)\.]+$/;
-  if (!mathRegex.test(sanitizedExpression)) {
-    return null;
-  }
-
-  // Another check to see if there is at least one operator
-  const operatorRegex = /[\+\-\*\/]/;
-  if (!operatorRegex.test(sanitizedExpression)) {
-    return null;
-  }
-
-  try {
-    // Using the Function constructor is safer than eval() because it doesn't
-    // have access to the surrounding scope.
-    const result = new Function(`return ${sanitizedExpression}`)();
-
-    // Check if the result is a valid number
-    if (typeof result === 'number' && isFinite(result)) {
-      return result;
+    // 3. Prevent trivial or unsafe inputs
+    // Check for empty strings or strings with only operators/spaces.
+    if (!/\d/.test(sanitizedExpression)) {
+        return null;
     }
-    return null;
-  } catch (error) {
-    // If parsing or execution fails, it's not a valid expression.
-    return null;
-  }
+    // Check if there's at least one operator.
+    if (!/[\+\-\*\/]/.test(sanitizedExpression)) {
+        return null;
+    }
+    // Prevent expressions that are just operators e.g., "++" or "*/"
+    if (/^[\s\+\-\*\/]+$/.test(sanitizedExpression)) {
+        return null;
+    }
+
+    try {
+        // 4. Use the Function constructor, which is safer than eval().
+        // It runs in its own scope and does not have access to the outer scope's variables.
+        // Combined with our strict regex, the risk of code injection is minimized.
+        const result = new Function(`return ${sanitizedExpression}`)();
+
+        // 5. Final check on the output
+        if (typeof result === 'number' && isFinite(result)) {
+            return result;
+        }
+        return null;
+    } catch (error) {
+        // If parsing or execution fails (e.g., "1+/2"), it's not a valid expression.
+        return null;
+    }
 }
