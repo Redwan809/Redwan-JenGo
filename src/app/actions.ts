@@ -112,7 +112,6 @@ function findIntent(normalizedInput: string): Intent | null {
       const normalizedPattern = normalizeText(pattern);
       
       // ইনপুটের মধ্যে প্যাটার্নটি আছে কিনা চেক করা হচ্ছে
-      // This is the most reliable simple check.
       if (normalizedInput.includes(normalizedPattern)) {
         return intent;
       }
