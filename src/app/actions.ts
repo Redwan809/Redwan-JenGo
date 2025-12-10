@@ -106,17 +106,14 @@ function searchDictionary(input: string): string | null {
  * ৩. ইনটেন্ট খোঁজার ফাংশন (Pattern Matching)
  */
 function findIntent(normalizedInput: string): Intent | null {
-  // Debugging log to see what the server actually sees
-  console.log("Checking Intents for:", normalizedInput);
-
   for (const intent of allIntents) {
     for (const pattern of intent.patterns) {
       // প্যাটার্নগুলোকেও নরমালাইজ করে নিচ্ছি যাতে ম্যাচিং সঠিক হয়
       const normalizedPattern = normalizeText(pattern);
       
       // ইনপুটের মধ্যে প্যাটার্নটি আছে কিনা চেক করা হচ্ছে
-      if (normalizedInput.includes(normalizedPattern) || normalizedPattern.includes(normalizedInput)) {
-        console.log("Matched Intent:", intent.tag); // Log mismatch
+      // This is the most reliable simple check.
+      if (normalizedInput.includes(normalizedPattern)) {
         return intent;
       }
     }
