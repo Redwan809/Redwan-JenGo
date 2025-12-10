@@ -1,6 +1,5 @@
 "use server";
 
-// ১. সব JSON ফাইল ইম্পোর্ট
 import generalIntents from "@/lib/intents/general.json";
 import socialIntents from "@/lib/intents/social.json";
 import identityIntents from "@/lib/intents/identity.json";
@@ -16,7 +15,6 @@ import { calculateExpression } from "@/lib/math-parser";
 import { getSituationalResponse } from "@/lib/situational-logic";
 import type { Message } from "@/components/chat/ChatLayout";
 
-// --- Types ---
 type Intent = {
   tag: string;
   patterns: string[];
@@ -32,13 +30,12 @@ type DictionaryEntry = {
   bn: string;
 };
 
-// --- ২. ডাটাবেস তৈরি (সব ফাইল এক করা) ---
-// কোনো ফাইল মিসিং বা এরর থাকলে সেটা স্কিপ করবে, কিন্তু বাকিগুলো লোড করবে।
+// --- ১. ডাটাবেস লোড ---
 const loadAllIntents = (): Intent[] => {
   const allData = [
     generalIntents,
     socialIntents,
-    identityIntents, // আপনার কাঙ্ক্ষিত identity ফাইল
+    identityIntents,
     emojiIntents,
     knowledgeIntents,
     historyIntents,
@@ -48,132 +45,138 @@ const loadAllIntents = (): Intent[] => {
   ];
 
   let combinedIntents: Intent[] = [];
-  
   allData.forEach((data) => {
     if ((data as IntentData).intents) {
       combinedIntents = [...combinedIntents, ...(data as IntentData).intents];
     }
   });
-
   return combinedIntents;
 };
 
-const DATABASE = loadAllIntents(); // এটিই আমাদের মেইন ডাটাবেস
+const DATABASE = loadAllIntents();
 
-// --- ৩. পাওয়ারফুল টেক্সট ক্লিনার ---
-// এটি ইনপুটকে এমনভাবে প্রস্তুত করে যাতে ফাইলের সাথে হুবহু মিল পাওয়া যায়।
+// --- ২. অ্যালগরিদম: টেক্সট ক্লিনার ---
 function cleanText(text: string): string {
   if (!text) return "";
   return text
-    .normalize("NFKC") // বাংলা বা ইংলিশ সব ক্যারেক্টার স্ট্যান্ডার্ড করে
-    .toLowerCase()     // ছোট হাতের অক্ষরে রূপান্তর
-    .replace(/[?.!,;:"'()\[\]{}।\-]/g, "") // সব বিরাম চিহ্ন রিমুভ
-    .replace(/\s+/g, " ") // অতিরিক্ত স্পেস রিমুভ
-    .trim();
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\u0980-\u09FF\s]/g, "") // শুধু বাংলা, ইংরেজি ও সংখ্যা রাখবে
+    .replace(/\s+/g, " "); // এক্সট্রা স্পেস ডিলিট
+}
+
+// --- ৩. অ্যালগরিদম: Levenshtein Distance (বানান ভুল ধরার জাদুকরী লজিক) ---
+// এটি বের করে দুটি বাক্যের মধ্যে কত শতাংশ মিল আছে।
+function getSimilarity(s1: string, s2: string): number {
+  const longer = s1.length > s2.length ? s1 : s2;
+  const shorter = s1.length > s2.length ? s2 : s1;
+  const longerLength = longer.length;
+  
+  if (longerLength === 0) return 1.0;
+  
+  const costs = new Array();
+  for (let i = 0; i <= longer.length; i++) {
+    let lastValue = i;
+    for (let j = 0; j <= shorter.length; j++) {
+      if (i === 0) {
+        costs[j] = j;
+      } else {
+        if (j > 0) {
+          let newValue = costs[j - 1];
+          if (longer.charAt(i - 1) !== shorter.charAt(j - 1)) {
+            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+          }
+          costs[j - 1] = lastValue;
+          lastValue = newValue;
+        }
+      }
+    }
+    if (i > 0) costs[shorter.length] = lastValue;
+  }
+  
+  return (longerLength - costs[shorter.length]) / longerLength;
 }
 
 /**
- * ৪. ইউনিভার্সাল স্ক্যানার (Universal File Scanner)
- * এই ফাংশনটি ডাটাবেসের শুরু থেকে শেষ পর্যন্ত প্রতিটি প্যাটার্ন চেক করবে।
+ * ৪. আল্টিমেট স্ক্যানার
+ * এটি এক্সাক্ট ম্যাচ না পেলে বানানের মিল চেক করবে।
  */
 function scanAllFiles(userInput: string): Intent | null {
-  const cleanedInput = cleanText(userInput);
+  const input = cleanText(userInput);
   
-  // লুপ চালিয়ে প্রতিটি ফাইলের প্রতিটি ইনটেন্ট চেক করা হচ্ছে
+  let bestMatch: Intent | null = null;
+  let highestScore = 0;
+
+  console.log(`Checking: "${input}"`);
+
   for (const intent of DATABASE) {
     for (const pattern of intent.patterns) {
-      const cleanedPattern = cleanText(pattern);
+      const dbPattern = cleanText(pattern);
 
-      // লজিক ১: হুবহু মিল (Exact Match)
-      // যেমন: Pattern: "তোমার নাম কি", Input: "তোমার নাম কি"
-      if (cleanedInput === cleanedPattern) {
-        return intent;
-      }
+      // ১. যদি হুবহু মিলে যায় (Fastest)
+      if (input === dbPattern) return intent;
 
-      // লজিক ২: ইনপুটের মধ্যে প্যাটার্ন আছে কিনা (Partial Match - Input contains Pattern)
-      // যেমন: Input: "ভাই তোমার নাম কি বলো", Pattern: "তোমার নাম কি"
-      // এখানে ইনপুট বড়, কিন্তু প্যাটার্নটি তার ভেতরে আছে।
-      if (cleanedInput.includes(cleanedPattern)) {
-        // ছোট শব্দের ভুল ম্যাচ এড়ানোর জন্য চেক (যেমন 'hi' যেন 'history' তে ম্যাচ না করে)
-        // প্যাটার্নটি অবশ্যই আলাদা শব্দ হিসেবে থাকতে হবে অথবা ৩ অক্ষরের বেশি হতে হবে
-        if (cleanedPattern.length > 3 || cleanedInput.split(" ").includes(cleanedPattern)) {
-             return intent;
-        }
-      }
+      // ২. যদি ইনপুটের মধ্যে প্যাটার্ন থাকে (যেমন: "প্লিজ তোমার নাম কি")
+      if (input.includes(dbPattern) && dbPattern.length > 3) return intent;
 
-      // লজিক ৩: প্যাটার্নের মধ্যে ইনপুট আছে কিনা (Reverse Match)
-      // যেমন: Input: "নাম কি", Pattern: "তোমার নাম কি"
-      // ইউজার ছোট করে লিখলে যেন বড় প্যাটার্নটি ধরে ফেলে।
-      if (cleanedPattern.includes(cleanedInput)) {
-         // খুব ছোট ইনপুট (যেমন ১-২ অক্ষর) এড়াতে হবে যাতে ভুল রেজাল্ট না আসে
-         if (cleanedInput.length > 2) {
-            return intent;
-         }
+      // ৩. যদি প্যাটার্নের মধ্যে ইনপুট থাকে (যেমন: "নাম কি" -> "তোমার নাম কি")
+      if (dbPattern.includes(input) && input.length > 3) return intent;
+
+      // ৪. ফাজি ম্যাচিং (বানান ভুল চেক) - "Tumar name ki" vs "Tomar nam ki"
+      const score = getSimilarity(input, dbPattern);
+      
+      // যদি ৭০% এর বেশি মিল থাকে, তবে সেটাকে আমরা সম্ভাব্য উত্তর হিসেবে রাখব
+      if (score > 0.70 && score > highestScore) {
+        highestScore = score;
+        bestMatch = intent;
+        console.log(`Potential Match: "${dbPattern}" Score: ${score}`);
       }
     }
   }
 
-  return null; // পুরো ডাটাবেস খুঁজেও কিছু না পেলে null
+  return bestMatch;
 }
 
-// --- ডিকশনারি ফাংশন ---
+// --- ডিকশনারি ---
 function checkDictionary(input: string): string | null {
   try {
     const dictionary = (banglaMeaningData as { dictionary: DictionaryEntry[] }).dictionary;
     const cleanInput = cleanText(input);
     
-    // ১. সরাসরি শব্দ খোঁজা
     const directMatch = dictionary.find(d => d.en.toLowerCase() === cleanInput);
     if (directMatch) return `"${directMatch.en}"-এর বাংলা অর্থ হলো "${directMatch.bn}"।`;
 
-    // ২. "meaning of X" বা "X মানে কি" প্যাটার্ন
-     const patterns = [
-      /^(?:what is the meaning of|meaning of|what is)\s+([a-zA-Z]+)/i, 
-      /^([a-zA-Z]+)\s+(?:mane ki|er ortho ki|ortho ki|er bangla ki|bangla ki|মানে কি|এর অর্থ কি|এর বাংলা কি)/i,
-    ];
-    
-    let wordToFind = "";
-
-    for (const regex of patterns) {
-        const match = input.trim().toLowerCase().match(regex);
-        if (match && match[1]) {
-            wordToFind = match[1].trim();
-            break;
-        }
+    if (cleanInput.includes("meaning") || cleanInput.includes("mane")) {
+      const words = cleanInput.split(" ");
+      for (const word of words) {
+        const match = dictionary.find(d => d.en.toLowerCase() === word);
+        if (match) return `"${match.en}"-এর বাংলা অর্থ হলো "${match.bn}"।`;
+      }
     }
-    
-    if (wordToFind) {
-      const match = dictionary.find(d => d.en.toLowerCase() === wordToFind);
-      if (match) return `"${match.en}"-এর বাংলা অর্থ হলো "${match.bn}"।`;
-    }
-
     return null;
   } catch (e) { return null; }
 }
 
-
-// --- Main Server Action ---
-
+// --- Main Action ---
 export async function getAiResponse(userInput: string, history: Message[]): Promise<string> {
   const rawInput = userInput.trim();
   if (!rawInput) return "কিছু বলুন, আমি শুনছি! 😊";
 
-  // ১. ম্যাথ (Math) আগে চেক করা ভালো কারণ এটি সুনির্দিষ্ট লজিক
+  // ১. ম্যাথ
   try {
     const mathResult = calculateExpression(rawInput);
     if (mathResult !== null) return `হিসাব অনুযায়ী ফলাফল: ${mathResult}`;
   } catch (e) {}
 
-  // ২. ডিকশনারি (Dictionary)
+  // ২. ডিকশনারি
   const dictResponse = checkDictionary(rawInput);
   if (dictResponse) return dictResponse;
 
-  // ৩. সিচুয়েশনাল লজিক (Context) - যদি আগের কথার রেশ ধরে কিছু বলে
+  // ৩. সিচুয়েশনাল লজিক
   const situationalResponse = getSituationalResponse(cleanText(rawInput), history);
   if (situationalResponse) return situationalResponse;
 
-  // ৪. সব ফাইল স্ক্যান (The Universal Scan)
-  // এখানে আপনার "তোমার পরিচয় কি" এবং অন্যান্য সব কিছু চেক হবে।
+  // ৪. সব ফাইল স্ক্যান (fuzzy + exact)
   const matchedIntent = scanAllFiles(rawInput);
   
   if (matchedIntent) {
@@ -181,6 +184,6 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
     return responses[Math.floor(Math.random() * responses.length)];
   }
 
-  // ৫. কিছুই না পেলে
-  return "দুঃখিত, আমার ডাটাবেসে এই প্রশ্নের উত্তরটি এই মুহূর্তে খুঁজে পাচ্ছি না। আপনি কি অন্য কোনো বিষয়ে জানতে চান?";
+  // ৫. ফলব্যাক
+  return "আমি দুঃখিত, আমি আপনার কথাটি ঠিক বুঝতে পারিনি। 🤔";
 }
