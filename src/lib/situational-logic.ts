@@ -11,6 +11,27 @@ export function getSituationalResponse(userInput: string, history: Message[]): s
     const lastMessage = history.length > 1 ? history[history.length - 2] : null;
     const lastAiMessage = history.find(m => m.sender === 'ai');
 
+    // Situation: User asks for their own name.
+    if (userInput.includes("amar nam ki") || userInput.includes("amar name ki")) {
+        let userName: string | null = null;
+        // Search history for user's name declaration
+        for (const msg of history) {
+            if (msg.sender === 'user') {
+                const match = msg.text.match(/(?:amar name|amar nam is)\s+(\w+)/i);
+                if (match && match[1]) {
+                    userName = match[1];
+                    break;
+                }
+            }
+        }
+        if (userName) {
+            return `আপনার নাম তো ${userName}, আমি যতদূর মনে করতে পারছি! 😊`;
+        } else {
+            return "আমি দুঃখিত, আমি আপনার নাম এখনো জানি না। আপনার নাম কি?";
+        }
+    }
+
+
     // Situation 1: User says "bye" at the very start of the conversation.
     if (history.length <= 2 && (userInput.includes("bye") || userInput.includes("বিদায়"))) {
         return "আমরা তো এখনো কথাই শুরু করিনি! এখনই বিদায়? 😯";
