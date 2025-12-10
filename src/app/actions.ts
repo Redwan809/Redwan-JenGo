@@ -10,6 +10,7 @@ import scienceIntents from "@/lib/intents/science.json";
 import creativeIntents from "@/lib/intents/creative.json";
 import abuseIntents from "@/lib/intents/abuse.json";
 import banglaMeaningData from "@/lib/intents/bangla-meaning.json";
+import memesIntents from "@/lib/intents/memes.json";
 
 import { calculateExpression } from "@/lib/math-parser";
 import { getSituationalResponse } from "@/lib/situational-logic";
@@ -41,7 +42,8 @@ const loadAllIntents = (): Intent[] => {
     historyIntents,
     scienceIntents,
     creativeIntents,
-    abuseIntents
+    abuseIntents,
+    memesIntents,
   ];
 
   let combinedIntents: Intent[] = [];
