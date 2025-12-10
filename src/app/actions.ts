@@ -45,17 +45,36 @@ const allIntents: Intent[] = [
   ...(abuseIntents as IntentData).intents,
 ];
 
+// --- Helper Functions ---
+
+/**
+ * বাংলা টেক্সট নরমালাইজ করার ফাংশন
+ * এটি বিভিন্ন ধরনের 'য়', 'ড়', 'ঢ়' কে একটি স্ট্যান্ডার্ড ফর্মে নিয়ে আসে।
+ */
+function normalizeText(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/য়/g, 'য়') // Normalize Ya
+    .replace(/ড়/g, 'ড়') // Normalize Ra
+    .replace(/ঢ়/g, 'ঢ়') // Normalize Rha
+    .replace(/ø/g, 'o')
+    .replace(/[?.,!৷।]/g, '') // বিরাম চিহ্ন রিমুভ (বাংলা দাঁড়ি সহ)
+    .replace(/\s+/g, ' '); // অতিরিক্ত স্পেস রিমুভ
+}
+
 /**
  * ডিকশনারি বা শব্দার্থ খোঁজার ফাংশন
  */
 function searchDictionary(input: string): string | null {
   const dictionary: DictionaryEntry[] = (banglaMeaningData as { dictionary: DictionaryEntry[] }).dictionary;
-  const lowerInput = input.toLowerCase();
+  
+  // ডিকশনারির জন্য সাধারণ ক্লিনআপ
+  const lowerInput = input.trim().toLowerCase().replace(/[?.,!]/g, '');
 
-  // বিভিন্ন প্যাটার্ন চেক করা হচ্ছে, যেমন: "love মানে কি", "meaning of love"
   const patterns = [
-    /^(?:what is the meaning of|meaning of|what is)\s+([a-zA-Z]+)/i, // "meaning of love"
-    /^([a-zA-Z]+)\s+(?:mane ki|er ortho ki|ortho ki|er bangla ki|bangla ki|মানে কি|এর অর্থ কি|এর বাংলা কি)/i, // "love মানে কি"
+    /^(?:what is the meaning of|meaning of|what is)\s+([a-zA-Z]+)/i, 
+    /^([a-zA-Z]+)\s+(?:mane ki|er ortho ki|ortho ki|er bangla ki|bangla ki|মানে কি|এর অর্থ কি|এর বাংলা কি)/i,
   ];
   
   let wordToFind = "";
@@ -68,9 +87,8 @@ function searchDictionary(input: string): string | null {
     }
   }
 
-  // যদি কোনো প্যাটার্ন না মেলে, কিন্তু শুধু একটি শব্দ থাকে
-  if (!wordToFind && lowerInput.trim().split(/\s+/).length === 1 && /^[a-z]+$/.test(lowerInput.trim())) { 
-    wordToFind = lowerInput.trim();
+  if (!wordToFind && lowerInput.split(/\s+/).length === 1 && /^[a-z]+$/.test(lowerInput)) { 
+    wordToFind = lowerInput;
   }
   
   if (!wordToFind) return null;
@@ -86,25 +104,32 @@ function searchDictionary(input: string): string | null {
 
 /**
  * ৩. ইনটেন্ট খোঁজার ফাংশন (Pattern Matching)
- * এই ফাংশনটি allIntents (মানে সব ফাইলের সমষ্টি) এর ওপর লুপ চালায়।
  */
-function findIntent(cleanedInput: string): Intent | null {
+function findIntent(normalizedInput: string): Intent | null {
+  // Debugging log to see what the server actually sees
+  console.log("Checking Intents for:", normalizedInput);
+
   for (const intent of allIntents) {
     for (const pattern of intent.patterns) {
-      if (cleanedInput.includes(pattern.toLowerCase())) {
-        return intent; // ম্যাচ পাওয়া গেলে সাথে সাথে রিটার্ন করবে
+      // প্যাটার্নগুলোকেও নরমালাইজ করে নিচ্ছি যাতে ম্যাচিং সঠিক হয়
+      const normalizedPattern = normalizeText(pattern);
+      
+      // ইনপুটের মধ্যে প্যাটার্নটি আছে কিনা চেক করা হচ্ছে
+      if (normalizedInput.includes(normalizedPattern) || normalizedPattern.includes(normalizedInput)) {
+        console.log("Matched Intent:", intent.tag); // Log mismatch
+        return intent;
       }
     }
   }
-  return null; // কোনো ফাইলে না পেলে নাল রিটার্ন করবে
+  return null;
 }
 
 
 // --- Main Action Function ---
 
 export async function getAiResponse(userInput: string, history: Message[]): Promise<string> {
-  const normalizedInput = userInput.trim().toLowerCase().replace(/ø/g, 'o');
-  const cleanedInput = normalizedInput.replace(/[?.,!]/g, '');
+  // ইনপুট নরমালাইজ করা হচ্ছে
+  const cleanedInput = normalizeText(userInput);
 
   // ধাপ ১: ম্যাথ বা অংক চেক
   try {
@@ -117,7 +142,7 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   }
 
   // ধাপ ২: ডিকশনারি চেক
-  const dictionaryResponse = searchDictionary(cleanedInput);
+  const dictionaryResponse = searchDictionary(userInput); // মূল ইনপুট পাঠানো হচ্ছে কিছু প্যাটার্নের জন্য
   if (dictionaryResponse) {
     return dictionaryResponse;
   }
@@ -132,7 +157,6 @@ export async function getAiResponse(userInput: string, history: Message[]): Prom
   const matchedIntent = findIntent(cleanedInput);
   
   if (matchedIntent) {
-    // যদি কোনো একটি ফাইলে ম্যাচ পায়, এখান থেকেই উত্তর দিবে
     const responses = matchedIntent.responses;
     return responses[Math.floor(Math.random() * responses.length)];
   }
