@@ -1,0 +1,15 @@
+export default {
+    "dictionary": [
+        { "en": "done", "bn": "সম্পন্ন" },
+        { "en": "hello", "bn": "ওহে" },
+        { "en": "hi", "bn": "ওহে" },
+        { "en": "world", "bn": "বিশ্ব" },
+        { "en": "love", "bn": "ভালোবাসা" },
+        { "en": "friend", "bn": "বন্ধু" },
+        { "en": "code", "bn": "কোড" },
+        { "en": "water", "bn": "পানি" },
+        { "en": "fire", "bn": "আগুন" },
+        { "en": "computer", "bn": "কম্পিউটার" },
+        { "en": "run", "bn": "দৌড়ানো" }
+    ]
+}

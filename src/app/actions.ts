@@ -1,7 +1,16 @@
 "use server";
 
-import fs from 'fs';
-import path from 'path';
+import generalIntents from "@/lib/intents/general";
+import socialIntents from "@/lib/intents/social";
+import identityIntents from "@/lib/intents/identity";
+import emojiIntents from "@/lib/intents/emoji";
+import knowledgeIntents from "@/lib/intents/knowledge";
+import historyIntents from "@/lib/intents/history";
+import scienceIntents from "@/lib/intents/science";
+import creativeIntents from "@/lib/intents/creative";
+import abuseIntents from "@/lib/intents/abuse";
+import memesIntents from "@/lib/intents/memes";
+import banglaMeaningData from "@/lib/intents/bangla-meaning";
 
 import { calculateExpression } from "@/lib/math-parser";
 import { getSituationalResponse } from "@/lib/situational-logic";
@@ -22,62 +31,31 @@ type DictionaryEntry = {
   bn: string;
 };
 
-// --- ১. ডাটাবেস লোড (Vercel-এর জন্য অপ্টিমাইজড) ---
+// --- ১. ডাটাবেস লোড ---
 const loadAllIntents = (): Intent[] => {
-  const intentFiles = [
-    "general.json",
-    "social.json",
-    "identity.json",
-    "emoji.json",
-    "knowledge.json",
-    "history.json",
-    "science.json",
-    "creative.json",
-    "abuse.json",
-    "memes.json",
+  const allData: IntentData[] = [
+    generalIntents,
+    socialIntents,
+    identityIntents,
+    emojiIntents,
+    knowledgeIntents,
+    historyIntents,
+    scienceIntents,
+    creativeIntents,
+    abuseIntents,
+    memesIntents,
   ];
-  
-  let combinedIntents: Intent[] = [];
 
-  for (const fileName of intentFiles) {
-    try {
-      // Vercel-এর সার্ভারলেস ফাংশনের জন্য সঠিক পাথ তৈরি
-      const filePath = path.join(process.cwd(), 'src', 'lib', 'intents', fileName);
-      
-      // ফাইলটি পড়া হচ্ছে
-      const fileContent = fs.readFileSync(filePath, 'utf-8');
-      
-      // JSON পার্স করা হচ্ছে
-      const data = JSON.parse(fileContent) as IntentData;
-      
-      if (data.intents) {
-        combinedIntents = [...combinedIntents, ...data.intents];
-      }
-    } catch (error) {
-      console.error(`Error loading or parsing intent file ${fileName}:`, error);
-      // কোনো একটি ফাইল লোড না হলে অ্যাপটি ক্র্যাশ করবে না
+  let combinedIntents: Intent[] = [];
+  allData.forEach((data) => {
+    if (data && data.intents) {
+      combinedIntents = [...combinedIntents, ...data.intents];
     }
-  }
-  
+  });
   return combinedIntents;
 };
 
 const DATABASE = loadAllIntents();
-
-// --- ডিকশনারি লোড ---
-const loadDictionary = (): DictionaryEntry[] => {
-    try {
-        const filePath = path.join(process.cwd(), 'src', 'lib', 'intents', 'bangla-meaning.json');
-        const fileContent = fs.readFileSync(filePath, 'utf-8');
-        const data = JSON.parse(fileContent);
-        return data.dictionary || [];
-    } catch (error) {
-        console.error("Error loading dictionary file:", error);
-        return [];
-    }
-};
-
-const DICTIONARY = loadDictionary();
 
 // --- ২. অ্যালগরিদম: টেক্সট ক্লিনার ---
 function cleanText(text: string): string {
@@ -97,7 +75,7 @@ function getSimilarity(s1: string, s2: string): number {
   
   if (longerLength === 0) return 1.0;
   
-  const costs = new Array(shorter.length + 1);
+  const costs: number[] = [];
   for (let i = 0; i <= longer.length; i++) {
     let lastValue = i;
     for (let j = 0; j <= shorter.length; j++) {
@@ -170,21 +148,24 @@ function scanAllFiles(userInput: string): Intent | null {
 
 // --- ডিকশনারি ---
 function checkDictionary(input: string): string | null {
-  if (!DICTIONARY.length) return null;
+  try {
+    const dictionary: DictionaryEntry[] = (banglaMeaningData as { dictionary: DictionaryEntry[] }).dictionary;
+    const cleanInput = cleanText(input);
+    
+    const directMatch = dictionary.find(d => d.en.toLowerCase() === cleanInput);
+    if (directMatch) return `"${directMatch.en}"-এর বাংলা অর্থ হলো "${directMatch.bn}"।`;
 
-  const cleanInput = cleanText(input);
-  
-  const directMatch = DICTIONARY.find(d => d.en.toLowerCase() === cleanInput);
-  if (directMatch) return `"${directMatch.en}"-এর বাংলা অর্থ হলো "${directMatch.bn}"।`;
-
-  if (cleanInput.includes("meaning") || cleanInput.includes("mane")) {
-    const words = cleanInput.split(" ");
-    for (const word of words) {
-      const match = DICTIONARY.find(d => d.en.toLowerCase() === word);
-      if (match) return `"${match.en}"-এর বাংলা অর্থ হলো "${match.bn}"।`;
+    if (cleanInput.includes("meaning") || cleanInput.includes("mane")) {
+      const words = cleanInput.split(" ");
+      for (const word of words) {
+        const match = dictionary.find(d => d.en.toLowerCase() === word);
+        if (match) return `"${match.en}"-এর বাংলা অর্থ হলো "${match.bn}"।`;
+      }
     }
+    return null;
+  } catch (e) {
+    return null;
   }
-  return null;
 }
 
 // --- Main Action ---
