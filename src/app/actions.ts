@@ -1,16 +1,7 @@
 "use server";
 
-import generalIntents from "@/lib/intents/general.json";
-import socialIntents from "@/lib/intents/social.json";
-import identityIntents from "@/lib/intents/identity.json";
-import emojiIntents from "@/lib/intents/emoji.json";
-import knowledgeIntents from "@/lib/intents/knowledge.json";
-import historyIntents from "@/lib/intents/history.json";
-import scienceIntents from "@/lib/intents/science.json";
-import creativeIntents from "@/lib/intents/creative.json";
-import abuseIntents from "@/lib/intents/abuse.json";
-import banglaMeaningData from "@/lib/intents/bangla-meaning.json";
-import memesIntents from "@/lib/intents/memes.json";
+import fs from 'fs';
+import path from 'path';
 
 import { calculateExpression } from "@/lib/math-parser";
 import { getSituationalResponse } from "@/lib/situational-logic";
@@ -31,31 +22,62 @@ type DictionaryEntry = {
   bn: string;
 };
 
-// --- ১. ডাটাবেস লোড ---
+// --- ১. ডাটাবেস লোড (Vercel-এর জন্য অপ্টিমাইজড) ---
 const loadAllIntents = (): Intent[] => {
-  const allData = [
-    generalIntents,
-    socialIntents,
-    identityIntents,
-    emojiIntents,
-    knowledgeIntents,
-    historyIntents,
-    scienceIntents,
-    creativeIntents,
-    abuseIntents,
-    memesIntents,
+  const intentFiles = [
+    "general.json",
+    "social.json",
+    "identity.json",
+    "emoji.json",
+    "knowledge.json",
+    "history.json",
+    "science.json",
+    "creative.json",
+    "abuse.json",
+    "memes.json",
   ];
-
+  
   let combinedIntents: Intent[] = [];
-  allData.forEach((data) => {
-    if ((data as IntentData).intents) {
-      combinedIntents = [...combinedIntents, ...(data as IntentData).intents];
+
+  for (const fileName of intentFiles) {
+    try {
+      // Vercel-এর সার্ভারলেস ফাংশনের জন্য সঠিক পাথ তৈরি
+      const filePath = path.join(process.cwd(), 'src', 'lib', 'intents', fileName);
+      
+      // ফাইলটি পড়া হচ্ছে
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      
+      // JSON পার্স করা হচ্ছে
+      const data = JSON.parse(fileContent) as IntentData;
+      
+      if (data.intents) {
+        combinedIntents = [...combinedIntents, ...data.intents];
+      }
+    } catch (error) {
+      console.error(`Error loading or parsing intent file ${fileName}:`, error);
+      // কোনো একটি ফাইল লোড না হলে অ্যাপটি ক্র্যাশ করবে না
     }
-  });
+  }
+  
   return combinedIntents;
 };
 
 const DATABASE = loadAllIntents();
+
+// --- ডিকশনারি লোড ---
+const loadDictionary = (): DictionaryEntry[] => {
+    try {
+        const filePath = path.join(process.cwd(), 'src', 'lib', 'intents', 'bangla-meaning.json');
+        const fileContent = fs.readFileSync(filePath, 'utf-8');
+        const data = JSON.parse(fileContent);
+        return data.dictionary || [];
+    } catch (error) {
+        console.error("Error loading dictionary file:", error);
+        return [];
+    }
+};
+
+const DICTIONARY = loadDictionary();
 
 // --- ২. অ্যালগরিদম: টেক্সট ক্লিনার ---
 function cleanText(text: string): string {
@@ -68,7 +90,6 @@ function cleanText(text: string): string {
 }
 
 // --- ৩. অ্যালগরিদম: Levenshtein Distance (বানান ভুল ধরার জাদুকরী লজিক) ---
-// এটি বের করে দুটি বাক্যের মধ্যে কত শতাংশ মিল আছে।
 function getSimilarity(s1: string, s2: string): number {
   const longer = s1.length > s2.length ? s1 : s2;
   const shorter = s1.length > s2.length ? s2 : s1;
@@ -76,7 +97,7 @@ function getSimilarity(s1: string, s2: string): number {
   
   if (longerLength === 0) return 1.0;
   
-  const costs = new Array();
+  const costs = new Array(shorter.length + 1);
   for (let i = 0; i <= longer.length; i++) {
     let lastValue = i;
     for (let j = 0; j <= shorter.length; j++) {
@@ -107,7 +128,7 @@ function scanAllFiles(userInput: string): Intent | null {
   const input = cleanText(userInput);
   
   let bestMatch: Intent | null = null;
-  let highestScore = 0;
+  let highestScore = 0.70; // সর্বনিম্ন ৭০% মিল থাকতে হবে
 
   console.log(`Checking: "${input}"`);
 
@@ -116,22 +137,30 @@ function scanAllFiles(userInput: string): Intent | null {
       const dbPattern = cleanText(pattern);
 
       // ১. যদি হুবহু মিলে যায় (Fastest)
-      if (input === dbPattern) return intent;
-
+      if (input === dbPattern) {
+        console.log(`Exact Match Found: "${dbPattern}" in [${intent.tag}]`);
+        return intent;
+      }
+        
       // ২. যদি ইনপুটের মধ্যে প্যাটার্ন থাকে (যেমন: "প্লিজ তোমার নাম কি")
-      if (input.includes(dbPattern) && dbPattern.length > 3) return intent;
+      if (input.includes(dbPattern) && dbPattern.length > 3) {
+         console.log(`Substring Match (Pattern in Input) Found: "${dbPattern}" in [${intent.tag}]`);
+         return intent;
+      }
 
       // ৩. যদি প্যাটার্নের মধ্যে ইনপুট থাকে (যেমন: "নাম কি" -> "তোমার নাম কি")
-      if (dbPattern.includes(input) && input.length > 3) return intent;
+      if (dbPattern.includes(input) && input.length > 3) {
+         console.log(`Substring Match (Input in Pattern) Found: "${dbPattern}" in [${intent.tag}]`);
+         return intent;
+      }
 
-      // ৪. ফাজি ম্যাচিং (বানান ভুল চেক) - "Tumar name ki" vs "Tomar nam ki"
+      // ৪. ফাজি ম্যাচিং (বানান ভুল চেক)
       const score = getSimilarity(input, dbPattern);
       
-      // যদি ৭০% এর বেশি মিল থাকে, তবে সেটাকে আমরা সম্ভাব্য উত্তর হিসেবে রাখব
-      if (score > 0.70 && score > highestScore) {
+      if (score > highestScore) {
         highestScore = score;
         bestMatch = intent;
-        console.log(`Potential Match: "${dbPattern}" Score: ${score}`);
+        console.log(`Potential Fuzzy Match: "${dbPattern}" with score ${score} in [${intent.tag}]`);
       }
     }
   }
@@ -141,22 +170,21 @@ function scanAllFiles(userInput: string): Intent | null {
 
 // --- ডিকশনারি ---
 function checkDictionary(input: string): string | null {
-  try {
-    const dictionary = (banglaMeaningData as { dictionary: DictionaryEntry[] }).dictionary;
-    const cleanInput = cleanText(input);
-    
-    const directMatch = dictionary.find(d => d.en.toLowerCase() === cleanInput);
-    if (directMatch) return `"${directMatch.en}"-এর বাংলা অর্থ হলো "${directMatch.bn}"।`;
+  if (!DICTIONARY.length) return null;
 
-    if (cleanInput.includes("meaning") || cleanInput.includes("mane")) {
-      const words = cleanInput.split(" ");
-      for (const word of words) {
-        const match = dictionary.find(d => d.en.toLowerCase() === word);
-        if (match) return `"${match.en}"-এর বাংলা অর্থ হলো "${match.bn}"।`;
-      }
+  const cleanInput = cleanText(input);
+  
+  const directMatch = DICTIONARY.find(d => d.en.toLowerCase() === cleanInput);
+  if (directMatch) return `"${directMatch.en}"-এর বাংলা অর্থ হলো "${directMatch.bn}"।`;
+
+  if (cleanInput.includes("meaning") || cleanInput.includes("mane")) {
+    const words = cleanInput.split(" ");
+    for (const word of words) {
+      const match = DICTIONARY.find(d => d.en.toLowerCase() === word);
+      if (match) return `"${match.en}"-এর বাংলা অর্থ হলো "${match.bn}"।`;
     }
-    return null;
-  } catch (e) { return null; }
+  }
+  return null;
 }
 
 // --- Main Action ---
